@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <math.h>
 #include "blackboard.h"
+#include "logger.h"
 
 
 void compute_repulsive_force(double *Fx, double *Fy, newBlackboard *bb);
@@ -15,19 +16,16 @@ void compute_attractive_force(double *Fx, double *Fy, newBlackboard *bb);
 
 
 int main() {
-    // Access shared memory
     int shmid = shmget(SHM_KEY, sizeof(newBlackboard), 0666);
     if (shmid == -1) {
         perror("shmget failed");
         return 1;
     }
-
     newBlackboard *bb = (newBlackboard *)shmat(shmid, NULL, 0);
     if (bb == (void *)-1) {
         perror("shmat failed");
         return 1;
     }
-
     sem_t *sem = sem_open(SEM_NAME, 0);
     if (sem == SEM_FAILED) {
         perror("sem_open failed");
@@ -70,17 +68,31 @@ int main() {
 
         if (bb->drone_x < 0) { bb->drone_x = 0; vx = 0; }
         if (bb->drone_x > WIN_SIZE_X) { bb->drone_x = WIN_SIZE_X; vx = 0; }
-        if (bb->drone_y < 0) { bb->drone_y = 0; vy = 0; }
+        if (bb->drone_y < 0) { bb->drone_y = 0; vy = 0; } 
         if (bb->drone_y > WIN_SIZE_Y) { bb->drone_y = WIN_SIZE_Y; vy = 0; }
 
-        printf("Drone position: (%d, %d)\n", bb->drone_x, bb->drone_y);
+        for (int i=0; i<bb->n_obstacles; i++){
+            if (bb->drone_x == bb->obstacle_xs[i] && bb->drone_y == bb->obstacle_ys[i]){
+                bb->stats.hit_obstacles += 1;
+                log_message("Drone hit an obstacle at position (%d, %d)", bb->drone_x, bb->drone_y);
+            }
+        }
+        for (int i=0; i<bb->n_targets; i++){
+            if (bb->drone_x == bb->target_xs[i] && bb->drone_y == bb->target_ys[i]){
+                bb->stats.hit_targets += 1;
+                bb->target_xs[i] = -1;
+                bb->target_ys[i] = -1;
+                log_message("Drone got a target at position (%d, %d)", bb->drone_x, bb->drone_y);
+            }
+        }
+        if (x_i != x_i_minus_1 || y_i != y_i_minus_1){
+            bb->stats.distance_traveled += sqrt((x_i - x_i_minus_1) * (x_i - x_i_minus_1) + (y_i - y_i_minus_1) * (y_i - y_i_minus_1));
+        }
 
         sem_post(sem);
         usleep(DT * 1000000);
     }
-
     shmdt(bb);
-
     return 0;
 }
 
@@ -99,7 +111,24 @@ void compute_repulsive_force(double *Fx, double *Fy, newBlackboard *bb) {
             *Fx -= repulsive * (dx / dist);
             *Fy -= repulsive * (dy / dist);
         }
-    }
+    } // Obstacles
+
+    if (bb->drone_x < R) {
+        double repulsive = ETA * (1.0 / (bb->drone_x) - 1.0 / R) / (bb->drone_x * bb->drone_x);
+        *Fx += repulsive;
+    } // Left wall
+    if (WIN_SIZE_X - bb->drone_x < R) {
+        double repulsive = ETA * (1.0 / (WIN_SIZE_X - bb->drone_x) - 1.0 / R) / ((WIN_SIZE_X - bb->drone_x) * (WIN_SIZE_X - bb->drone_x));
+        *Fx -= repulsive;
+    } // Right wall
+    if (bb->drone_y < R) {
+        double repulsive = ETA * (1.0 / (bb->drone_y) - 1.0 / R) / (bb->drone_y * bb->drone_y);
+        *Fy += repulsive;
+    } // Top wall
+    if (WIN_SIZE_Y - bb->drone_y < R) {
+        double repulsive = ETA * (1.0 / (WIN_SIZE_Y - bb->drone_y) - 1.0 / R) / ((WIN_SIZE_Y - bb->drone_y) * (WIN_SIZE_Y - bb->drone_y));
+        *Fy -= repulsive;
+    } // Bottom wall
 }
 
 void compute_attractive_force(double *Fx, double *Fy, newBlackboard *bb) {

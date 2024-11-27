@@ -1,12 +1,15 @@
 # implement speed instead of movement
 # implement obstacle and target and robot dynamics and physics
-implement physics live parameter read
 # fix number of targets and obstacles in window
-implement log file
-# implement 8 movements
-implement 4 other keys
-implement score and target eating
-implement a timing system
-fix whatever watchdog should do
+# implement 8 movements 
+# implement score and target eating
+# implement a timing system
 # fix obstacle generation on target singularity
 # fix obstacle generation on drone singularity
+# implement log file
+implement start and reset
+# walls repulsiveness
+implement physics live parameter read
+fix whatever watchdog should do
+fork code
+keyboard ncurses code

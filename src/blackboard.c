@@ -10,28 +10,26 @@
 
 
 void read_parameters(int *num_obstacles, int *num_targets);
+double calculate_score(newBlackboard *bb);
 
 int main() {
-    // Create shared memory
     int shmid = shmget(SHM_KEY, sizeof(newBlackboard), IPC_CREAT | 0666);
     if (shmid == -1) { 
         perror("shmget failed");
         return 1;
     }
-
     newBlackboard *bb = (newBlackboard *)shmat(shmid, NULL, 0);
     if (bb == (newBlackboard *)-1) {
         perror("shmat failed");
         return 1;
     }
-
-    // Initialize shared state
     sem_t *sem = sem_open(SEM_NAME, O_CREAT, 0666, 1);
     if (sem == SEM_FAILED) {
         perror("sem_open failed");
         return 1;
     }
 
+    bb->score = 0.0;
     bb->drone_x = 0;
     bb->drone_y = 0;
     bb->n_obstacles = 5;
@@ -43,12 +41,18 @@ int main() {
         bb->target_xs[i] = -1;
         bb->target_ys[i] = -1;
     }
-    bb->score = 0;
+
+    bb->stats.hit_obstacles = 0;
+    bb->stats.hit_targets = 0;
+    bb->stats.time_elapsed = 0.0;
+    bb->stats.distance_traveled = 0.0;
 
     printf("Blackboard server started...\n");
     int n_targets, n_obstacles;
     while (1) {
         sem_wait(sem);
+
+        bb->score = calculate_score(bb);
         
         read_parameters(&n_obstacles, &n_targets);
         if (bb->n_obstacles != n_obstacles){
@@ -58,7 +62,7 @@ int main() {
             bb->n_targets = n_targets;
         }
         sem_post(sem);
-        sleep(10);
+        sleep(5);  // sleep for 5 seconds  
     }
 
     sem_close(sem);
@@ -84,4 +88,12 @@ void read_parameters(int *num_obstacles, int *num_targets) {
         }
     }
     fclose(file);
+}
+
+double calculate_score(newBlackboard *bb) {
+    double score = (double)bb->stats.hit_targets        * 10.0 - 
+                   (double)bb->stats.hit_obstacles      * 5.0 - 
+                   bb->stats.time_elapsed               * 0.1 - 
+                   bb->stats.distance_traveled          * 0.05;
+    return score;
 }
