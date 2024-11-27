@@ -27,6 +27,7 @@ int main() {
         return 1;
     }
 
+    int gen_x, gen_y;
     while (1) {
         sem_wait(sem);
 
@@ -36,9 +37,14 @@ int main() {
         }
 
         for (int i=0; i<bb->n_obstacles; i++){ 
-            bb->obstacle_xs[i] = rand() % (WIN_SIZE_X-1);
-            bb->obstacle_ys[i] = rand() % (WIN_SIZE_Y-1);
-            // printf("%d %d", bb->obstacle_xs[i], bb->obstacle_ys[i]);
+            gen_x = rand() % (WIN_SIZE_X-1);
+            gen_y = rand() % (WIN_SIZE_Y-1);
+            while (gen_x == bb->drone_x && gen_y == bb->drone_y){
+                gen_x = rand() % (WIN_SIZE_X-1);
+                gen_y = rand() % (WIN_SIZE_Y-1);
+            }
+            bb->obstacle_xs[i] = gen_x;
+            bb->obstacle_ys[i] = gen_y;
         }
 
         sem_post(sem);

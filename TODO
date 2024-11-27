@@ -1,10 +1,12 @@
-implement speed instead of movement
-implement obstacle and target and robot dynamics and physics
+# implement speed instead of movement
+# implement obstacle and target and robot dynamics and physics
 implement physics live parameter read
-fix number of targets and obstacles in window
+# fix number of targets and obstacles in window
 implement log file
-implement 8 movements
+# implement 8 movements
 implement 4 other keys
 implement score and target eating
 implement a timing system
 fix whatever watchdog should do
+# fix obstacle generation on target singularity
+# fix obstacle generation on drone singularity

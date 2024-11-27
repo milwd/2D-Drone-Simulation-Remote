@@ -10,7 +10,7 @@
 
 
 int main() {
-    // Access shared memory
+
     int shmid = shmget(SHM_KEY, sizeof(newBlackboard), 0666);
     if (shmid == -1) {
         perror("shmget failed");
@@ -34,7 +34,7 @@ int main() {
     noecho();
     curs_set(FALSE);
 
-    WINDOW *win = newwin(WIN_SIZE_Y+20, WIN_SIZE_X+10, 1, 1);
+    WINDOW *win = newwin(WIN_SIZE_Y+10, WIN_SIZE_X+3, 1, 1);
 
     while (1) {
         sem_wait(sem);
@@ -42,27 +42,36 @@ int main() {
         werase(win);
 
         box(win, 0, 0);
-        mvwprintw(win, 1, 2, "Drone Simulator - Inspection Window"); 
-        mvwprintw(win, 5, 2, "Drone Position: (%d, %d)", bb->drone_x, bb->drone_y);
-        mvwprintw(win, 6, 2, "Score: %d", bb->score);
-        mvwprintw(win, 8, 2, " Map:");
-        mvwprintw(win, 2, 2, "# targets and obstacles: %d - %d", bb->n_targets, bb->n_obstacles);
-        
-        for (int i=0; i<bb->n_obstacles; i++){
-            mvwprintw(win, 10 + bb->obstacle_ys[i], 4 + bb->obstacle_xs[i], "O(%d %d)", bb->obstacle_ys[i], bb->obstacle_xs[i]);
-        }  
-        for (int i=0; i<bb->n_targets; i++){
-            mvwprintw(win, 10 + bb->target_ys[i], 4 + bb->target_xs[i], "T(%d %d)", bb->target_ys[i], bb->target_xs[i]);
-        }  
-        // mvwprintw(win, 2, 2, " (%d %d) (%d %d) (%d %d) (%d %d) (%d %d) ", bb->obstacle_xs[0], bb->obstacle_ys[0], bb->obstacle_xs[1], bb->obstacle_ys[1], bb->obstacle_xs[2], bb->obstacle_ys[2], bb->obstacle_xs[3], bb->obstacle_ys[3], bb->obstacle_xs[4], bb->obstacle_ys[4]);
-        // mvwprintw(win, 3, 2, " (%d %d) (%d %d) (%d %d) (%d %d) (%d %d) ", bb->target_xs[0], bb->target_ys[0], bb->target_xs[1], bb->target_ys[1], bb->target_xs[2], bb->target_ys[2], bb->target_xs[3], bb->target_ys[3], bb->target_xs[4], bb->target_ys[4]);
-        
-        mvwprintw(win, 9 + bb->drone_y, 3 + bb->drone_x, "D");
+        mvwprintw(win, 1, 1, "Drone Simulator - Inspection Window"); 
+        mvwprintw(win, 3, 1, "Drone Position: (%d, %d)", bb->drone_x, bb->drone_y);
+        mvwprintw(win, 4, 1, "obstc Position: (%d, %d) (%d, %d) (%d, %d)", bb->obstacle_xs[0], bb->obstacle_ys[0], bb->obstacle_xs[1], bb->obstacle_ys[1], bb->obstacle_xs[2], bb->obstacle_ys[2]);
+        mvwprintw(win, 6, 1, "# targets and obstacles: %d - %d", bb->n_targets, bb->n_obstacles);
+        mvwprintw(win, 7, 1, "Score: %d", bb->score);
+        mvwprintw(win, 8, 1, "Map:");
 
+        for (int y = 0; y < WIN_SIZE_Y; y++) {
+            for (int x = 1; x <= WIN_SIZE_X; x++) {
+                for (int i = 0; i < bb->n_obstacles; i++) {
+                    if (bb->obstacle_xs[i] == x && bb->obstacle_ys[i] == y) {
+                        mvwprintw(win, 9 + y, 0 + x, "O");
+                    }
+                }
+                for (int i = 0; i < bb->n_targets; i++) {
+                    if (bb->target_xs[i] == x && bb->target_ys[i] == y) {
+                        mvwprintw(win, 9 + y, 0 + x, "T");
+                    }
+                }
+                if (bb->drone_x == x && bb->drone_y == y) {
+                    mvwprintw(win, 9 + y, 0 + x, "D");
+                }
+                // else {
+                //     mvwprintw(win, 9 + y, 0 + x, "-");
+                // }
+            }
+        }
         wrefresh(win);
-
-        sem_post(sem);
-        usleep(2000000); // Update every 100ms
+        sem_post(sem); 
+        usleep(100000); // 100ms
     }
 
     delwin(win);
