@@ -1,0 +1,2 @@
+num_obstacles=7
+num_targets=4
