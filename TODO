@@ -6,7 +6,7 @@
 # implement a timing system
 # fix obstacle generation on target singularity
 # fix obstacle generation on drone singularity
-# implement log file
+implement log file
 implement start #and reset
 # walls repulsiveness
 implement physics live parameter read

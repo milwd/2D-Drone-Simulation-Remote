@@ -1,7 +1,8 @@
 #ifndef BLACKBOARD_H
 #define BLACKBOARD_H
 
-#define SHM_KEY 12346
+#define SHM_KEY 18129
+#define SHM_NAME "/blackboard_shm"
 #define SEM_NAME "/blackboard_sem"
 #define PIPE_NAME "/tmp/keyboard_pipe"
 #define PARAM_FILE "parameters.txt"

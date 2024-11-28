@@ -1,2 +1,2 @@
-num_obstacles=7
+num_obstacles=1
 num_targets=1

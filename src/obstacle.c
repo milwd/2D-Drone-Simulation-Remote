@@ -2,22 +2,22 @@
 #include <stdlib.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 #include <semaphore.h>
 #include <unistd.h>
 #include "blackboard.h"
 
 
 int main() {
-    // Access shared memory
-    int shmid = shmget(SHM_KEY, sizeof(newBlackboard), 0666);
-    if (shmid == -1) {
-        perror("shmget failed");
+    int shm_fd = shm_open(SHM_NAME, O_RDWR, 0666);
+    if (shm_fd == -1) {
+        perror("shm_open failed");
         return 1;
     }
-
-    newBlackboard *bb = (newBlackboard *)shmat(shmid, NULL, 0); 
-    if (bb == (newBlackboard *)-1) {
-        perror("shmat failed");
+    newBlackboard *bb = mmap(NULL, sizeof(newBlackboard), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    if (bb == MAP_FAILED) {
+        perror("mmap failed");
         return 1;
     }
 
@@ -52,7 +52,7 @@ int main() {
     }
 
     sem_close(sem);
-    shmdt(bb);
-
+    // shmdt(bb);
+    munmap(bb, sizeof(newBlackboard));
     return 0;
 }

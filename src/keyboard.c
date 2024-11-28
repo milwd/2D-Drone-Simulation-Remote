@@ -3,6 +3,9 @@
 #include <ncurses.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/mman.h>
+#include <semaphore.h>
+#include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
 #include "blackboard.h"
@@ -13,15 +16,30 @@ void draw_button(WINDOW *parent, int y, int x, const char *label);
 
 int main() {
     // Access shared memory
-    int shmid = shmget(SHM_KEY, sizeof(newBlackboard), 0666);
-    if (shmid == -1) {
-        perror("shmget failed");
+    // int shmid = shmget(SHM_KEY, sizeof(newBlackboard), 0666);
+    // if (shmid == -1) {
+    //     perror("shmget failed");
+    //     return 1;
+    // }
+
+    // newBlackboard *bb = (newBlackboard *)shmat(shmid, NULL, 0);
+    // if (bb == (newBlackboard *)-1) {
+    //     perror("shmat failed");
+    //     return 1;
+    // }
+    int shm_fd = shm_open(SHM_NAME, O_RDWR, 0666);
+    if (shm_fd == -1) {
+        perror("shm_open failed");
         return 1;
     }
-
-    newBlackboard *bb = (newBlackboard *)shmat(shmid, NULL, 0);
-    if (bb == (newBlackboard *)-1) {
-        perror("shmat failed");
+    newBlackboard *bb = mmap(NULL, sizeof(newBlackboard), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    if (bb == MAP_FAILED) {
+        perror("mmap failed");
+        return 1;
+    }
+    sem_t *sem = sem_open(SEM_NAME, 0);
+    if (sem == SEM_FAILED) {
+        perror("sem_open failed");
         return 1;
     }
 
@@ -39,14 +57,16 @@ int main() {
     refresh();
 
     while (1) {
+        sem_wait(sem);
         wclear(win);
         box(win, 0, 0);
         mvwprintw(win, 1, 3, "DRONE SIMULATION COMMAND CENTER");
         
-        mvwprintw(win, 4, 3, "Score: %.1f", bb->score);
+        // mvwprintw(win, 4, 3, "Score: %.1f", bb->score);
         mvwprintw(win, 5, 3, "Targets: %d Obstacles: %d", bb->stats.hit_targets, bb->stats.hit_obstacles);
-        mvwprintw(win, 6, 3, "Time Elapsed: %.1f", bb->stats.time_elapsed);
+        // mvwprintw(win, 6, 3, "Time Elapsed: %.1f", bb->stats.time_elapsed);
         mvwprintw(win, 9, 3, "Command Forces: Fx = %d, Fy = %d", Fx, Fy);
+        // mvwprintw(win, 10, 3, "all Forces: Fx = %d, Fy = %d", Fx, Fy);
 
         draw_button(win, 5, 42, "Start (I)");
         draw_button(win, 9, 42, "Reset (M)");
@@ -73,13 +93,17 @@ int main() {
         update_forces(ch, &Fx, &Fy);
         bb->command_force_x = Fx;
         bb->command_force_y = Fy;
+        
+        sem_post(sem);
 
         refresh();
     }
 
     delwin(win);
     endwin();
-    shmdt(bb);
+    sem_close(sem);
+    munmap(bb, sizeof(newBlackboard));
+    // shmdt(bb);
 
     return 0;
 }
@@ -115,6 +139,10 @@ void reset_game(newBlackboard *bb) {
     bb->drone_y = 1;
     bb->command_force_x = 0;
     bb->command_force_y = 0;
+    bb->stats.time_elapsed = 0;
+    bb->stats.hit_obstacles = 0;
+    bb->stats.hit_targets = 0;
+    bb->stats.distance_traveled = 0;
 
     for (int i = 0; i < MAX_OBSTACLES; i++) {
         bb->obstacle_xs[i] = -1;
