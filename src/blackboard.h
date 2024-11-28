@@ -24,7 +24,6 @@ typedef struct {
     int hit_targets;
     double time_elapsed;
     double distance_traveled;
-    double score_coefficients[4];
 } Stats;
 
 typedef struct {
