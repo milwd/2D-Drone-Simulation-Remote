@@ -5,23 +5,12 @@
 #include <semaphore.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 #include <sys/mman.h>
 #include "blackboard.h"
 
 
 int main() {
-    
-    // int shmid = shmget(SHM_KEY, sizeof(newBlackboard), 0666);
-    // if (shmid == -1) {
-    //     perror("shmget failed");
-    //     return 1;
-    // }
-
-    // newBlackboard *bb = (newBlackboard *)shmat(shmid, NULL, 0);
-    // if (bb == (newBlackboard *)-1) {
-    //     perror("shmat failed");
-    //     return 1;
-    // }
     int shm_fd = shm_open(SHM_NAME, O_RDWR, 0666);
     if (shm_fd == -1) {
         perror("shm_open failed");
@@ -32,12 +21,12 @@ int main() {
         perror("mmap failed");
         return 1;
     }
-
     sem_t *sem = sem_open(SEM_NAME, 0);
     if (sem == SEM_FAILED) {
         perror("sem_open failed");
         return 1;
     }
+    srand((unsigned int)time(NULL));
 
     int gen_x, gen_y;
     while (1) {
@@ -60,7 +49,7 @@ int main() {
         }
 
         sem_post(sem);
-        sleep(5);
+        sleep(6);
     }
 
     sem_close(sem);

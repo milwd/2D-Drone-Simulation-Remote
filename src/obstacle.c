@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <semaphore.h>
 #include <unistd.h>
+#include <time.h>
 #include "blackboard.h"
 
 
@@ -20,12 +21,12 @@ int main() {
         perror("mmap failed");
         return 1;
     }
-
     sem_t *sem = sem_open(SEM_NAME, 0);
     if (sem == SEM_FAILED) {
         perror("sem_open failed");
         return 1;
     }
+    srand((unsigned int)time(NULL));
 
     int gen_x, gen_y;
     while (1) {
@@ -48,7 +49,7 @@ int main() {
         }
 
         sem_post(sem);
-        sleep(5);
+        sleep(4);
     }
 
     sem_close(sem);

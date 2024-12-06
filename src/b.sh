@@ -1,9 +1,8 @@
-gcc -o 1.out blackboard.c
-gcc -o 2.out dynamics.c 
-gcc -o 3.out keyboard.c -lncurses
-gcc -o 4.out obstacle.c 
-gcc -o 5.out target.c 
-gcc -o 6.out watchdog.c 
-gcc -o 7.out window.c -lncurses
-
+gcc -o master.out master.c
+gcc -o blb.out blackboard.c
+gcc -o dyn.out dynamics.c -lm
+gcc -o key.out keyboard.c -lncurses
+gcc -o obs.out obstacle.c 
+gcc -o tar.out target.c 
+gcc -o win.out window.c -lncurses
 

@@ -26,13 +26,15 @@ $(OBJ_DIR):
 # Default target
 all: $(TARGET)
 
+# Compile source files into object files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+	
 # Link the object files to create the final binary
 $(TARGET): $(OBJ_FILES) | $(BIN_DIR)
 	$(CC) $(OBJ_FILES) -o $(TARGET) $(LDFLAGS)
 
-# Compile source files into object files
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
+
 
 # Clean up
 clean:

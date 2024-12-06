@@ -9,24 +9,16 @@
 #include <string.h>
 #include <unistd.h>
 #include "blackboard.h"
+#include <signal.h>
+
 
 void update_forces(int key, int *Fx, int *Fy);
 void reset_game(newBlackboard *bb);
 void draw_button(WINDOW *parent, int y, int x, const char *label);
 
-int main() {
-    // Access shared memory
-    // int shmid = shmget(SHM_KEY, sizeof(newBlackboard), 0666);
-    // if (shmid == -1) {
-    //     perror("shmget failed");
-    //     return 1;
-    // }
+int main(int argc, char *argv[]) {
 
-    // newBlackboard *bb = (newBlackboard *)shmat(shmid, NULL, 0);
-    // if (bb == (newBlackboard *)-1) {
-    //     perror("shmat failed");
-    //     return 1;
-    // }
+    // Access shared memory (existing code)
     int shm_fd = shm_open(SHM_NAME, O_RDWR, 0666);
     if (shm_fd == -1) {
         perror("shm_open failed");
@@ -43,16 +35,24 @@ int main() {
         return 1;
     }
 
+    int dummy_fd = open(PIPE_NAME, O_RDONLY | O_NONBLOCK);
+    int pipe_fd = open(PIPE_NAME, O_WRONLY);
+    if (pipe_fd == -1) {
+        printf("here we are, pipe open failed\n");
+        perror("open failed");
+        return 1;
+    }
+
     int Fx = 0, Fy = 0;
 
     initscr();
     cbreak();
     noecho();
     keypad(stdscr, TRUE);
-    curs_set(0); 
+    curs_set(0);
 
-    WINDOW *win = newwin(25, 60, 1, 1);  
-    box(win, 0, 0);                      
+    WINDOW *win = newwin(25, 60, 1, 1);
+    box(win, 0, 0);
 
     refresh();
 
@@ -61,12 +61,9 @@ int main() {
         wclear(win);
         box(win, 0, 0);
         mvwprintw(win, 1, 3, "DRONE SIMULATION COMMAND CENTER");
-        
-        // mvwprintw(win, 4, 3, "Score: %.1f", bb->score);
+
         mvwprintw(win, 5, 3, "Targets: %d Obstacles: %d", bb->stats.hit_targets, bb->stats.hit_obstacles);
-        // mvwprintw(win, 6, 3, "Time Elapsed: %.1f", bb->stats.time_elapsed);
         mvwprintw(win, 9, 3, "Command Forces: Fx = %d, Fy = %d", Fx, Fy);
-        // mvwprintw(win, 10, 3, "all Forces: Fx = %d, Fy = %d", Fx, Fy);
 
         draw_button(win, 5, 42, "Start (I)");
         draw_button(win, 9, 42, "Reset (M)");
@@ -79,40 +76,44 @@ int main() {
         draw_button(win, 21, 4, "Down-Left (Z)");
         draw_button(win, 21, 23, "Down (S)");
         draw_button(win, 21, 42, "Down-Right (C)");
-        
+
         wrefresh(win);
 
         int ch = getch();
         if (ch == 'm') {
             reset_game(bb);
-            mvprintw(24, 1, "Game reset.");
-            refresh();
+            write(pipe_fd, "reset", 5);
+        }
+        if (ch == 'i') {
+            write(pipe_fd, "start", 5);
+        }
+        if (ch == 'q') {
+            write(pipe_fd, "quiet", 5);
+            break;
         }
 
-        // mvwprintw(win, 30, 3, "Key pressed: %c\t", ch);
         update_forces(ch, &Fx, &Fy);
         bb->command_force_x = Fx;
         bb->command_force_y = Fy;
-        
-        sem_post(sem);
 
+        sem_post(sem);
         refresh();
     }
-
+    
+    close(pipe_fd);
     delwin(win);
     endwin();
     sem_close(sem);
     munmap(bb, sizeof(newBlackboard));
-    // shmdt(bb);
 
     return 0;
 }
 
 void draw_button(WINDOW *parent, int y, int x, const char *label) {
-    int width = 16;  
-    int height = 4;  
+    int width = 16;
+    int height = 4;
     WINDOW *button_win = subwin(parent, height, width, y, x);
-    box(button_win, 0, 0);  
+    box(button_win, 0, 0);
     int label_x = (width - strlen(label)) / 2;
     int label_y = height / 2;
     mvwprintw(button_win, label_y, label_x, "%s", label);

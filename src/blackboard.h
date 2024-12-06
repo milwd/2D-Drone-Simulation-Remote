@@ -1,11 +1,20 @@
 #ifndef BLACKBOARD_H
 #define BLACKBOARD_H
 
-#define SHM_KEY 18129
+#include <pthread.h>
+#include <stdarg.h>
+
+extern pthread_mutex_t logger_mutex;
 #define SHM_NAME "/blackboard_shm"
 #define SEM_NAME "/blackboard_sem"
-#define PIPE_NAME "/tmp/keyboard_pipe"
 #define PARAM_FILE "parameters.txt"
+#define PIPE_NAME "/tmp/drone_pipe"
+
+static FILE *log_file = NULL;
+pthread_mutex_t logger_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+#define NUMBER_OF_PROCESSES 6
+#define MAX_MSG_LENGTH 256
 
 #define WIN_SIZE_X 60
 #define WIN_SIZE_Y 20
@@ -14,11 +23,17 @@
 #define MAX_TARGETS 100
 #define MAX_OBSTACLES 100
 
-#define M   1.0     // mass
-#define K   1.0     // viscous damping coefficient
+#define M   1     // mass
+#define K   1     // viscous damping coefficient
+#define ETA 5     // strength of the obstacle repulsion factor
+#define R   5     // radius of the drone obstacle repulsion
+int mass = M;
+int visc_damp_coef = K;
+int obst_repl_coef = ETA;
+int radius = R;
+
+#define EPSILON 0.0001  // small value to avoid division by zero
 #define DT  0.001   // time step
-#define R   5.0     // radius of the drone obstacle repulsion
-#define ETA 5.0     // strength of the obstacle repulsion factor
 
 typedef struct {
     int hit_obstacles;
@@ -39,5 +54,27 @@ typedef struct {
     int target_xs[MAX_TARGETS];
     int target_ys[MAX_TARGETS];
 } newBlackboard;
+
+static inline void logger(const char *format, ...) {
+    if (!log_file) {
+        log_file = fopen("simulation.log", "a");
+        if (!log_file) {
+            perror("Unable to open log file");
+            return;
+        }
+    }
+    pthread_mutex_lock(&logger_mutex);
+    time_t now = time(NULL);
+    char time_str[20];
+    strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", localtime(&now));
+    fprintf(log_file, "[%s] ", time_str);
+    va_list args;
+    va_start(args, format);
+    vfprintf(log_file, format, args);
+    va_end(args);
+    fprintf(log_file, "\n");
+    fflush(log_file);
+    pthread_mutex_unlock(&logger_mutex);
+}
 
 #endif 

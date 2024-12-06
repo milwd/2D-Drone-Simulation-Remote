@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -10,10 +11,11 @@
 #include <sys/wait.h>
 #include "blackboard.h"
 
-#define NUM_CHILDREN 2  // Window and Keyboard binaries
 
-void read_parameters(int *num_obstacles, int *num_targets);
+void read_parameters(int *num_obstacles, int *num_targets, float *mass, float *visc_damp_coef, float *obst_repl_coef, float *radius);
 double calculate_score(newBlackboard *bb);
+void initialize_logger();
+void cleanup_logger();
 
 int main() {
     int shm_fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
@@ -31,15 +33,13 @@ int main() {
         return 1;
     }
     memset(bb, 0, sizeof(newBlackboard));
-
-    // Set up semaphore
     sem_t *sem = sem_open(SEM_NAME, O_CREAT, 0666, 1);
     if (sem == SEM_FAILED) {
         perror("sem_open failed");
         return 1;
     }
+    initialize_logger();
 
-    // Initialize shared memory structure
     bb->score = 0.0;
     bb->drone_x = 0;
     bb->drone_y = 0;
@@ -57,7 +57,7 @@ int main() {
     bb->stats.time_elapsed = 0.0;
     bb->stats.distance_traveled = 0.0;
 
-    printf("Blackboard server started...\n");
+    logger("Blackboard server started...");
 
 
     int n_targets, n_obstacles;
@@ -66,8 +66,7 @@ int main() {
 
         bb->score = calculate_score(bb);
         
-        // Read parameters
-        read_parameters(&n_obstacles, &n_targets);
+        read_parameters(&n_obstacles, &n_targets, &mass, &visc_damp_coef, &obst_repl_coef, &radius);
         if (bb->n_obstacles != n_obstacles) {
             bb->n_obstacles = n_obstacles;
         }
@@ -79,6 +78,7 @@ int main() {
         sleep(5);  // sleep for 5 seconds  
     }
 
+    cleanup_logger();
     sem_close(sem);
     sem_unlink(SEM_NAME);
     munmap(bb, sizeof(newBlackboard));
@@ -87,7 +87,7 @@ int main() {
     return 0;
 }
 
-void read_parameters(int *num_obstacles, int *num_targets) {
+void read_parameters(int *num_obstacles, int *num_targets, float *mass, float *visc_damp_coef, float *obst_repl_coef, float *radius) {
     FILE *file = fopen(PARAM_FILE, "r");
     if (file == NULL) {
         perror("Failed to open parameter file");
@@ -99,7 +99,15 @@ void read_parameters(int *num_obstacles, int *num_targets) {
             *num_obstacles = atoi(line + 14);
         } else if (strncmp(line, "num_targets=", 12) == 0) {
             *num_targets = atoi(line + 12);
-        }
+        } else if (strncmp(line, "mass=", 5) == 0) {
+            *mass = atoi(line + 5);
+        } else if (strncmp(line, "visc_damp_coef=", 15) == 0) {
+            *visc_damp_coef = atoi(line + 15);
+        } else if (strncmp(line, "obst_repl_coef=", 15) == 0) {
+            *obst_repl_coef = atoi(line + 15);
+        } else if (strncmp(line, "radius=", 7) == 0) {
+            *radius = atoi(line + 7);
+        } 
     }
     fclose(file);
 }
@@ -112,5 +120,31 @@ double calculate_score(newBlackboard *bb) {
     return score;
 }
 
+void initialize_logger() {
+    if (access("simulation.log", F_OK) == 0) {
+        if (unlink("simulation.log") == 0) {
+            printf("Existing simulation.log file deleted successfully.\n");
+        } else {
+            perror("Failed to delete simulation.log");
+        }
+    } else {
+        printf("No existing simulation.log file found.\n");
+    }
+    if (!log_file) {
+        log_file = fopen("simulation.log", "a");
+        if (!log_file) {
+            perror("Unable to open log file");
+            return;
+        }
+    }
+}
 
+void cleanup_logger() {
+    pthread_mutex_lock(&logger_mutex);
+    if (log_file) {
+        fclose(log_file);
+        log_file = NULL;
+    }
+    pthread_mutex_unlock(&logger_mutex);
+}
 
