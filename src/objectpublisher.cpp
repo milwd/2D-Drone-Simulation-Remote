@@ -19,9 +19,11 @@
 #include <semaphore.h>
 #include <unistd.h>
 #include <time.h>
+#include <pthread.h>
 #include "blackboard.h"
 
 using namespace eprosima::fastdds::dds;
+pthread_t obstacle_thread, target_thread;
 
 class CustomIdlPublisher
 {
@@ -205,9 +207,9 @@ public:
         return true;
     }   
 
-    bool publish(int obj_x[MAX_OBSTACLES], int obj_y[MAX_OBSTACLES], DataWriter* writer, Obstacles my_pubsublist)
+    void publish(int * obj_x, int * obj_y, DataWriter* writer, Obstacles my_pubsublist)
     {
-        for (int i=0; i<MAX_OBSTACLES; i++){ 
+        for (int i=0; i<MAX_OBJECTS; i++){ 
             int gen_x = rand() % (WIN_SIZE_X-1);
             int gen_y = rand() % (WIN_SIZE_Y-1);
             while (gen_x <= 0 && gen_y <= 0){
@@ -217,35 +219,28 @@ public:
             obj_x[i] = gen_x;
             obj_y[i] = gen_y;
         }
-        for (int i=0; i<5; i++){ //DELETE THIS LATER TODO
-            std::cout << "Target " << i << " x: " << obj_x[i] << " y: " << obj_y[i] << std::endl;
-        }
-        std::vector<int32_t> obstacles_x(obj_x, obj_x + MAX_OBSTACLES);
-        std::vector<int32_t> obstacles_y(obj_y, obj_y + MAX_OBSTACLES);
-        my_pubsublist.obstacles_number(MAX_OBSTACLES);
+        std::vector<int32_t> obstacles_x(obj_x, obj_x + MAX_OBJECTS);
+        std::vector<int32_t> obstacles_y(obj_y, obj_y + MAX_OBJECTS);
+        my_pubsublist.obstacles_number(MAX_OBJECTS);
         my_pubsublist.obstacles_x(obstacles_x);
         my_pubsublist.obstacles_y(obstacles_y);
         writer->write(&my_pubsublist);
-        return true;
     }
 
     void run()
     {
-        int obs_x[MAX_OBSTACLES], obs_y[MAX_OBSTACLES];
-        int tar_x[MAX_OBSTACLES], tar_y[MAX_OBSTACLES];
+        int obs_x[MAX_OBJECTS], obs_y[MAX_OBJECTS];
+        int tar_x[MAX_OBJECTS], tar_y[MAX_OBJECTS];
+
         while (true)
         {
-            if (listener_obstacle.matched_>0){
-                if (publish(obs_x, obs_y, writer_obstacle, my_obstacles)) //TODO fix pointer to list
-                {
-                    std::cout << "Message: " << my_obstacles.obstacles_number() <<"obstacles generated and SENT!" << std::endl;
-                }
+            if (listener_obstacle.matched_>0){  // obstacle topic
+                publish(obs_x, obs_y, writer_obstacle, my_obstacles);
+                std::cout << "Message: " << my_obstacles.obstacles_number() <<"obstacles generated and SENT!" << std::endl;
             }
-            if (listener_target.matched_>0){
-                if (publish(tar_x, tar_y, writer_target, my_targets)) //TODO fix pointer to list
-                {
-                    std::cout << "Message: " << my_targets.obstacles_number() <<"targets generated and SENT!" << std::endl;
-                }
+            if (listener_target.matched_>0){    // target topic
+                publish(tar_x, tar_y, writer_target, my_targets);
+                std::cout << "Message: " << my_targets.obstacles_number() <<"targets generated and SENT!" << std::endl;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(3000)); //TODO IMPLEMENT TWO THREADS THAT RUN FOR TARGETS AND OBSTACLES
         }

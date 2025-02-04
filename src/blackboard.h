@@ -8,25 +8,24 @@ extern pthread_mutex_t logger_mutex;
 #define SHM_NAME "/blackboard_shm"
 #define SEM_NAME "/blackboard_sem"
 #define PARAM_FILE "parameters.txt"
-#define PIPE_NAME "/tmp/drone_pipe"
+// #define PIPE_NAME "/tmp/drone_pipe"
 
 static FILE *log_file = NULL;
 pthread_mutex_t logger_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-#define NUMBER_OF_PROCESSES 6
+#define NUMBER_OF_PROCESSES 5
 #define MAX_MSG_LENGTH 256
 
-#define WIN_SIZE_X 60
-#define WIN_SIZE_Y 20
+#define WIN_SIZE_X 200
+#define WIN_SIZE_Y 50
 #define RENDER_DELAY 100000 // microseconds
 
-#define MAX_TARGETS 100
-#define MAX_OBSTACLES 100  // TODO MAKE THEM EQUAL
+#define MAX_OBJECTS 100  
 
 #define M   1     // mass
 #define K   1     // viscous damping coefficient
-#define ETA 5     // strength of the obstacle repulsion factor
-#define R   5     // radius of the drone obstacle repulsion
+#define ETA 10     // strength of the obstacle repulsion factor
+#define R   8     // radius of the drone obstacle repulsion
 int mass = M;
 int visc_damp_coef = K;
 int obst_repl_coef = ETA;
@@ -49,10 +48,13 @@ typedef struct {
     int n_targets;
     int drone_x, drone_y; 
     int command_force_x, command_force_y;
-    int obstacle_xs[MAX_OBSTACLES];
-    int obstacle_ys[MAX_OBSTACLES];
-    int target_xs[MAX_TARGETS];
-    int target_ys[MAX_TARGETS];
+    int obstacle_xs[MAX_OBJECTS];
+    int obstacle_ys[MAX_OBJECTS];
+    int target_xs[MAX_OBJECTS];
+    int target_ys[MAX_OBJECTS];
+    int state;
+    int max_height;
+    int max_width;
 } newBlackboard;
 
 static inline void logger(const char *format, ...) {

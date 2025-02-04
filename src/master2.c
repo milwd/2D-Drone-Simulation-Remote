@@ -7,6 +7,7 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdbool.h>
 #include "blackboard.h"
 
 
@@ -19,20 +20,20 @@ int main() {
         "Blackboard", "Window", "Dynamics", "Keyboard", "Object"
     };
 
-    if (access(PIPE_NAME, F_OK) == 0) {
-        // FIFO exists, so remove it
-        if (unlink(PIPE_NAME) == -1) {
-            perror("Failed to remove existing FIFO");
-            exit(EXIT_FAILURE);
-        }
-        printf("Existing FIFO removed.\n");
-    }
-    if (mkfifo(PIPE_NAME, 0666) == -1) {
-        perror("mkfifo failed");
-        exit(EXIT_FAILURE);
-    }
+    // if (access(PIPE_NAME, F_OK) == 0) {
+    //     // FIFO exists, so remove it
+    //     if (unlink(PIPE_NAME) == -1) {
+    //         perror("Failed to remove existing FIFO");
+    //         exit(EXIT_FAILURE);
+    //     }
+    //     printf("Existing FIFO removed.\n");
+    // }
+    // if (mkfifo(PIPE_NAME, 0666) == -1) {
+    //     perror("mkfifo failed");
+    //     exit(EXIT_FAILURE);
+    // }
 
-    for (int i = 0; i < 5; i++) {  // TODO NUM PROCESS
+    for (int i = 0; i < NUMBER_OF_PROCESSES; i++) {  
         pid_t pid = fork();
         allPID[i] = pid;
 
@@ -99,7 +100,7 @@ int main() {
     while (wait(NULL) > 0);
 
     // Clean up the named pipe
-    unlink(PIPE_NAME);
+    // unlink(PIPE_NAME);
 
     printf("All processes terminated. Exiting master process.\n");
     return 0;

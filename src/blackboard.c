@@ -9,6 +9,7 @@
 #include <semaphore.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <stdbool.h>
 #include "blackboard.h"
 
 
@@ -33,7 +34,7 @@ int main() {
         return 1;
     }
     memset(bb, 0, sizeof(newBlackboard));
-    sem_t *sem = sem_open(SEM_NAME, O_CREAT, 0666, 1);
+    sem_t *sem = sem_open(SEM_NAME, O_CREAT, 0666, 0);
     if (sem == SEM_FAILED) {
         perror("sem_open failed");
         return 1;
@@ -41,8 +42,8 @@ int main() {
     initialize_logger();
 
     bb->score = 0.0;
-    bb->drone_x = 0;
-    bb->drone_y = 0;
+    bb->drone_x = 2;
+    bb->drone_y = 2;
     bb->n_obstacles = 5;
     bb->n_targets = 5;
     for (int i = 0; i < 99; i++) {
@@ -51,11 +52,17 @@ int main() {
         bb->target_xs[i] = -1;
         bb->target_ys[i] = -1;
     }
+    bb->command_force_x = 0; 
+    bb->command_force_y = 0;
+    bb->max_width   = 20;
+    bb->max_height  = 20;
 
     bb->stats.hit_obstacles = 0;
     bb->stats.hit_targets = 0;
     bb->stats.time_elapsed = 0.0;
     bb->stats.distance_traveled = 0.0;
+
+    bb->state = 0;  // 0 for paused or waiting, 1 for running, 2 for quit
 
     logger("Blackboard server started...");
 
@@ -75,7 +82,7 @@ int main() {
         }
 
         sem_post(sem);
-        sleep(5);  // sleep for 5 seconds  
+        sleep(5);  // freq of 0.2 Hz  
     }
 
     cleanup_logger();

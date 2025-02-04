@@ -1,13 +1,15 @@
 todo 
 
 server discovery
-in code todos
 make readable from parameters
 # if possible read yaml not txt
 state machine
-fix window showing problem
 watchdog
 
 finally, restructure the folder and cleaning
 readme
 git push
+
+(kinda fixed) fix window showing problem
+(kinda fixed) in code todos
+

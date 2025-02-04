@@ -85,18 +85,16 @@ private:
                 if (info.valid_data)
                 {
                     sem_wait(sem);
-                    for (int i=0; i<MAX_OBSTACLES; i++){ // TODO MIX THESE TWO FORs
-                        bb->obstacle_xs[i] = -1;
-                        bb->obstacle_ys[i] = -1;
-                    }
-                    for (int i=0; i<bb->n_obstacles; i++){
-                        bb->obstacle_xs[i] = my_obstacles.obstacles_x().at(i);
-                        bb->obstacle_ys[i] = my_obstacles.obstacles_y().at(i);
+                    for (int i=0; i<MAX_OBJECTS; i++){ 
+                        if (i < bb->n_obstacles){
+                            bb->obstacle_xs[i] = my_obstacles.obstacles_x().at(i);
+                            bb->obstacle_ys[i] = my_obstacles.obstacles_y().at(i);
+                        } else {
+                            bb->obstacle_xs[i] = -1;
+                            bb->obstacle_ys[i] = -1;
+                        }
                     }
                     sem_post(sem);
-                    for (int i=0; i<my_obstacles.obstacles_number(); i++){ // TODO DELETE THIS LATER
-                        std::cout << "Obstacle received " << i << " x: " << my_obstacles.obstacles_x().at(i) << " y: " << my_obstacles.obstacles_y().at(i) << std::endl;
-                    }
                 }
             }
         }
@@ -145,18 +143,16 @@ private:
                 if (info.valid_data)
                 {
                     sem_wait(sem);
-                    for (int i=0; i<MAX_TARGETS; i++){ // TODO MIX THESE TWO FORs
-                        bb->target_xs[i] = -1;
-                        bb->target_ys[i] = -1;
-                    }
-                    for (int i=0; i<bb->n_targets; i++){
-                        bb->target_xs[i] = my_targets.obstacles_x().at(i);
-                        bb->target_ys[i] = my_targets.obstacles_y().at(i);
+                    for (int i=0; i<MAX_OBJECTS; i++){ 
+                        if (i < bb->n_targets){
+                            bb->target_xs[i] = my_targets.obstacles_x().at(i);
+                            bb->target_ys[i] = my_targets.obstacles_y().at(i);
+                        } else {
+                            bb->target_xs[i] = -1;
+                            bb->target_ys[i] = -1;
+                        }
                     }
                     sem_post(sem);
-                    for (int i=0; i<my_targets.obstacles_number(); i++){ // TODO DELETE THIS LATER
-                        std::cout << "Target received " << i << " x: " << my_targets.obstacles_x().at(i) << " y: " << my_targets.obstacles_y().at(i) << std::endl;
-                    }
                 }
             }
         }

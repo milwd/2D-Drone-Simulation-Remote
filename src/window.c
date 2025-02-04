@@ -110,6 +110,7 @@ void check_for_quit(int * pipe_fd) {
     exit(0);
 }
 
+// NOW IS IT MORE EFFICIENT TO RENDER ONE CHAR AT A TIME OR LINE BY LINE?
 void render_game(WINDOW *win, newBlackboard *bb) {
     werase(win);
 
