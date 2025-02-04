@@ -1,5 +1,5 @@
-num_obstacles=1
-num_targets=1
+num_obstacles=5
+num_targets=7
 mass=1
 visc_damp_coef=1
 obst_repl_coef=5

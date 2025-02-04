@@ -21,7 +21,7 @@ pthread_mutex_t logger_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define RENDER_DELAY 100000 // microseconds
 
 #define MAX_TARGETS 100
-#define MAX_OBSTACLES 100
+#define MAX_OBSTACLES 100  // TODO MAKE THEM EQUAL
 
 #define M   1     // mass
 #define K   1     // viscous damping coefficient

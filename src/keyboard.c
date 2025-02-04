@@ -17,8 +17,6 @@ void reset_game(newBlackboard *bb);
 void draw_button(WINDOW *parent, int y, int x, const char *label);
 
 int main(int argc, char *argv[]) {
-
-    // Access shared memory (existing code)
     int shm_fd = shm_open(SHM_NAME, O_RDWR, 0666);
     if (shm_fd == -1) {
         perror("shm_open failed");
@@ -34,7 +32,6 @@ int main(int argc, char *argv[]) {
         perror("sem_open failed");
         return 1;
     }
-
     int dummy_fd = open(PIPE_NAME, O_RDONLY | O_NONBLOCK);
     int pipe_fd = open(PIPE_NAME, O_WRONLY);
     if (pipe_fd == -1) {

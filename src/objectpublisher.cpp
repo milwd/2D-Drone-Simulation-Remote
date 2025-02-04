@@ -1,0 +1,267 @@
+
+#include "Generated/ObstaclesPubSubTypes.hpp"
+
+#include <chrono>
+#include <thread>
+
+#include <fastdds/dds/domain/DomainParticipant.hpp>
+#include <fastdds/dds/domain/DomainParticipantFactory.hpp>
+#include <fastdds/dds/publisher/DataWriter.hpp>
+#include <fastdds/dds/publisher/DataWriterListener.hpp>
+#include <fastdds/dds/publisher/Publisher.hpp>
+#include <fastdds/dds/topic/TypeSupport.hpp>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <semaphore.h>
+#include <unistd.h>
+#include <time.h>
+#include "blackboard.h"
+
+using namespace eprosima::fastdds::dds;
+
+class CustomIdlPublisher
+{
+private:
+
+    Obstacles my_obstacles;
+    Obstacles my_targets;
+
+    DomainParticipant* participant_;
+
+    Publisher* publisher_;
+
+    Topic* topic_obstacle;
+    Topic* topic_target;
+
+    DataWriter* writer_obstacle;
+    DataWriter* writer_target;
+
+    TypeSupport type_;
+
+    class PubListenerObstacle : public DataWriterListener
+    {
+    public:
+
+        PubListenerObstacle()
+            : matched_(0)
+        {
+        }
+
+        ~PubListenerObstacle() override
+        {
+        }
+
+        void on_publication_matched(
+                DataWriter*,
+                const PublicationMatchedStatus& info) override
+        {
+            if (info.current_count_change == 1)
+            {
+                matched_ = info.total_count;
+                std::cout << "Publisher Obstacle matched." << std::endl;
+            }
+            else if (info.current_count_change == -1)
+            {
+                matched_ = info.total_count;
+                std::cout << "Publisher unmatched." << std::endl;
+            }
+            else
+            {
+                std::cout << info.current_count_change
+                        << " is not a valid value for PublicationMatchedStatus current count change." << std::endl;
+            }
+        }
+
+        std::atomic_int matched_;
+
+    } listener_obstacle;
+    class PubListenerTarget : public DataWriterListener
+    {
+    public:
+
+        PubListenerTarget()
+            : matched_(0)
+        {
+        }
+
+        ~PubListenerTarget() override
+        {
+        }
+
+        void on_publication_matched(
+                DataWriter*,
+                const PublicationMatchedStatus& info) override
+        {
+            if (info.current_count_change == 1)
+            {
+                matched_ = info.total_count;
+                std::cout << "Publisher Target matched." << std::endl;
+            }
+            else if (info.current_count_change == -1)
+            {
+                matched_ = info.total_count;
+                std::cout << "Publisher unmatched." << std::endl;
+            }
+            else
+            {
+                std::cout << info.current_count_change
+                        << " is not a valid value for PublicationMatchedStatus current count change." << std::endl;
+            }
+        }
+
+        std::atomic_int matched_;
+
+    } listener_target;
+
+public:
+
+    CustomIdlPublisher()
+        : participant_(nullptr)
+        , publisher_(nullptr)
+        , topic_obstacle(nullptr)
+        , topic_target(nullptr)
+        , writer_obstacle(nullptr)        
+        , writer_target(nullptr)
+        , type_(new ObstaclesPubSubType())
+    {
+    }
+
+    virtual ~CustomIdlPublisher()
+    {
+        if (writer_obstacle != nullptr)
+        {
+            publisher_->delete_datawriter(writer_obstacle);
+        }
+        if (publisher_ != nullptr)
+        {
+            participant_->delete_publisher(publisher_);
+        }
+        if (writer_target != nullptr)
+        {
+            publisher_->delete_datawriter(writer_target);
+        }
+        if (publisher_ != nullptr)
+        {
+            participant_->delete_publisher(publisher_);
+        }
+        if (topic_obstacle != nullptr)
+        {
+            participant_->delete_topic(topic_obstacle);
+        }
+        if (topic_target != nullptr)
+        {
+            participant_->delete_topic(topic_target);
+        }
+        DomainParticipantFactory::get_instance()->delete_participant(participant_);
+    }
+
+    bool init()
+    {
+
+        DomainParticipantQos participantQos;
+        participantQos.name("Participant_publisher");
+        participant_ = DomainParticipantFactory::get_instance()->create_participant(0, participantQos);
+
+        if (participant_ == nullptr)
+        {
+            return false;
+        }
+
+        type_.register_type(participant_);
+        
+        publisher_ = participant_->create_publisher(PUBLISHER_QOS_DEFAULT, nullptr);
+        if (publisher_ == nullptr)
+        {
+            return false;
+        }
+
+        // Obstacles
+        topic_obstacle = participant_->create_topic("Topic1", type_.get_type_name(), TOPIC_QOS_DEFAULT);
+        if (topic_obstacle == nullptr)
+        {
+            return false;
+        }
+        writer_obstacle = publisher_->create_datawriter(topic_obstacle, DATAWRITER_QOS_DEFAULT, &listener_obstacle);
+        if (writer_obstacle == nullptr)
+        {
+            return false;
+        }
+        // Targets
+        topic_target = participant_->create_topic("Topic2", type_.get_type_name(), TOPIC_QOS_DEFAULT);
+        if (topic_target == nullptr)
+        {
+            return false;
+        }
+        writer_target = publisher_->create_datawriter(topic_target, DATAWRITER_QOS_DEFAULT, &listener_target);
+
+        if (writer_target == nullptr)
+        {
+            return false;
+        }
+        return true;
+    }   
+
+    bool publish(int obj_x[MAX_OBSTACLES], int obj_y[MAX_OBSTACLES], DataWriter* writer, Obstacles my_pubsublist)
+    {
+        for (int i=0; i<MAX_OBSTACLES; i++){ 
+            int gen_x = rand() % (WIN_SIZE_X-1);
+            int gen_y = rand() % (WIN_SIZE_Y-1);
+            while (gen_x <= 0 && gen_y <= 0){
+                gen_x = rand() % (WIN_SIZE_X-1);
+                gen_y = rand() % (WIN_SIZE_Y-1);
+            }
+            obj_x[i] = gen_x;
+            obj_y[i] = gen_y;
+        }
+        for (int i=0; i<5; i++){ //DELETE THIS LATER TODO
+            std::cout << "Target " << i << " x: " << obj_x[i] << " y: " << obj_y[i] << std::endl;
+        }
+        std::vector<int32_t> obstacles_x(obj_x, obj_x + MAX_OBSTACLES);
+        std::vector<int32_t> obstacles_y(obj_y, obj_y + MAX_OBSTACLES);
+        my_pubsublist.obstacles_number(MAX_OBSTACLES);
+        my_pubsublist.obstacles_x(obstacles_x);
+        my_pubsublist.obstacles_y(obstacles_y);
+        writer->write(&my_pubsublist);
+        return true;
+    }
+
+    void run()
+    {
+        int obs_x[MAX_OBSTACLES], obs_y[MAX_OBSTACLES];
+        int tar_x[MAX_OBSTACLES], tar_y[MAX_OBSTACLES];
+        while (true)
+        {
+            if (listener_obstacle.matched_>0){
+                if (publish(obs_x, obs_y, writer_obstacle, my_obstacles)) //TODO fix pointer to list
+                {
+                    std::cout << "Message: " << my_obstacles.obstacles_number() <<"obstacles generated and SENT!" << std::endl;
+                }
+            }
+            if (listener_target.matched_>0){
+                if (publish(tar_x, tar_y, writer_target, my_targets)) //TODO fix pointer to list
+                {
+                    std::cout << "Message: " << my_targets.obstacles_number() <<"targets generated and SENT!" << std::endl;
+                }
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(3000)); //TODO IMPLEMENT TWO THREADS THAT RUN FOR TARGETS AND OBSTACLES
+        }
+    }
+};
+
+int main()
+{
+    std::cout << "Starting publisher." << std::endl;
+
+    CustomIdlPublisher* mypub = new CustomIdlPublisher();
+    if(mypub->init())
+    {
+        mypub->run();
+    }
+
+    delete mypub;
+    return 0;
+}

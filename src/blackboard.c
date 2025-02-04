@@ -12,7 +12,7 @@
 #include "blackboard.h"
 
 
-void read_parameters(int *num_obstacles, int *num_targets, float *mass, float *visc_damp_coef, float *obst_repl_coef, float *radius);
+void read_parameters(int *num_obstacles, int *num_targets, int *mass, int *visc_damp_coef, int *obst_repl_coef, int *radius);
 double calculate_score(newBlackboard *bb);
 void initialize_logger();
 void cleanup_logger();
@@ -87,7 +87,7 @@ int main() {
     return 0;
 }
 
-void read_parameters(int *num_obstacles, int *num_targets, float *mass, float *visc_damp_coef, float *obst_repl_coef, float *radius) {
+void read_parameters(int *num_obstacles, int *num_targets, int *mass, int *visc_damp_coef, int *obst_repl_coef, int *radius) {
     FILE *file = fopen(PARAM_FILE, "r");
     if (file == NULL) {
         perror("Failed to open parameter file");

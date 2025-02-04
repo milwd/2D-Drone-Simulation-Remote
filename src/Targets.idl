@@ -1,0 +1,6 @@
+struct Targets
+{
+    sequence<long> targets_x;
+    sequence<long> targets_y;
+    long targets_number;
+};
