@@ -24,7 +24,7 @@ pthread_mutex_t logger_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #define M   1     // mass
 #define K   1     // viscous damping coefficient
-#define ETA 10     // strength of the obstacle repulsion factor
+#define ETA 15     // strength of the obstacle repulsion factor
 #define R   8     // radius of the drone obstacle repulsion
 int mass = M;
 int visc_damp_coef = K;

@@ -36,10 +36,8 @@ int main() {
     }
 
     double vx = 0, vy = 0;
-    // bb->drone_x = 0;
-    // bb->drone_y = 0;
-    double x_i = bb->drone_x, x_i_minus_1 = bb->drone_x, x_i_minus_2 = bb->drone_x;
-    double y_i = bb->drone_y, y_i_minus_1 = bb->drone_y, y_i_minus_2 = bb->drone_y;
+    double x_i = bb->drone_x, x_i_minus_1 = bb->drone_x;
+    double y_i = bb->drone_y, y_i_minus_1 = bb->drone_y;
 
     while (1){
         sem_wait(sem);
@@ -48,10 +46,6 @@ int main() {
         double Fy = bb->command_force_y;
         double repulsive_Fx = 0.0, repulsive_Fy = 0.0;
         double attractive_Fx = 0.0, attractive_Fy = 0.0;
-        // bb->obstacle_xs[0] = 20;
-        // bb->obstacle_ys[0] = 20;
-        // bb->target_xs[0] = 40;
-        // bb->target_ys[0] = 20;
         compute_repulsive_force(&repulsive_Fx, &repulsive_Fy, bb);
         compute_attractive_force(&attractive_Fx, &attractive_Fy, bb);
         Fx += repulsive_Fx + attractive_Fx;
@@ -63,12 +57,8 @@ int main() {
 
         bb->drone_x = x_i_new;
         bb->drone_y = y_i_new;
-
-        x_i_minus_2 = x_i_minus_1;  //TODO WHAT THE FUCK IS Xi-2
         x_i_minus_1 = x_i;
         x_i = x_i_new;
-
-        y_i_minus_2 = y_i_minus_1;
         y_i_minus_1 = y_i;
         y_i = y_i_new;
 
@@ -77,7 +67,7 @@ int main() {
         if (bb->drone_y < 1) { bb->drone_y = 1; vy = 0; Fy = 0;} 
         if (bb->drone_y > bb->max_height-1) { bb->drone_y = bb->max_height-2; vy = 0; Fy = 0;}
 
-        for (int i=0; i<bb->n_obstacles; i++){ // TODO FIX THIS AND MAYBE MERGE
+        for (int i=0; i<bb->n_obstacles; i++){ // TODO MAYBE MERGE WITH OTHER LOOPS
             if (bb->drone_x == bb->obstacle_xs[i] && bb->drone_y == bb->obstacle_ys[i]){
                 bb->stats.hit_obstacles += 1;
                 bb->obstacle_xs[i] = -1;
@@ -108,7 +98,7 @@ void compute_repulsive_force(double *Fx, double *Fy, newBlackboard *bb) {
     *Fy = 0;
 
     for (int i = 0; i < bb->n_obstacles; i++) {
-        if (bb->obstacle_xs[i] < 1 || bb->obstacle_ys[i] < 1 || bb->obstacle_xs[i] > bb->max_width || bb->obstacle_ys[i] > bb->max_height) {
+        if (bb->obstacle_xs[i] < 1 || bb->obstacle_ys[i] < 1 || bb->obstacle_xs[i] >= bb->max_width || bb->obstacle_ys[i] >= bb->max_height) {
             continue;
         }
         double dx = bb->obstacle_xs[i] - bb->drone_x;
@@ -150,7 +140,7 @@ void compute_attractive_force(double *Fx, double *Fy, newBlackboard *bb) {
     *Fy = 0;
 
     for (int i = 0; i < bb->n_targets; i++) {
-        if (bb->target_xs[i] < 1 || bb->target_ys[i] < 1 || bb->target_xs[i] > bb->max_width || bb->target_ys[i] > bb->max_height) {
+        if (bb->target_xs[i] < 1 || bb->target_ys[i] < 1 || bb->target_xs[i] >= bb->max_width || bb->target_ys[i] >= bb->max_height) {
             continue;
         }
         double dx = bb->target_xs[i] - bb->drone_x;
@@ -158,7 +148,7 @@ void compute_attractive_force(double *Fx, double *Fy, newBlackboard *bb) {
         double dist = sqrt(dx * dx + dy * dy);
 
         if (dist < radius && dist > 0) {
-            double attractive = obst_repl_coef * 0.1 * (dist);
+            double attractive = obst_repl_coef * 0.05 * (dist);
             *Fx += attractive * (dx / (dist + EPSILON));
             *Fy += attractive * (dy / (dist + EPSILON));
         }

@@ -120,10 +120,10 @@ void read_parameters(int *num_obstacles, int *num_targets, int *mass, int *visc_
 }
 
 double calculate_score(newBlackboard *bb) {
-    double score = (double)bb->stats.hit_targets        * 10.0 - 
+    double score = (double)bb->stats.hit_targets        * 30.0 - 
                    (double)bb->stats.hit_obstacles      * 5.0 - 
-                   bb->stats.time_elapsed               * 0.1 - 
-                   bb->stats.distance_traveled          * 0.05;
+                   bb->stats.time_elapsed               * 0.05 - 
+                   bb->stats.distance_traveled          * 0.1;
     return score;
 }
 
