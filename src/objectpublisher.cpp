@@ -231,7 +231,7 @@ public:
     {
         int obs_x[MAX_OBJECTS], obs_y[MAX_OBJECTS];
         int tar_x[MAX_OBJECTS], tar_y[MAX_OBJECTS];
-
+        srand((unsigned int)time(NULL));
         while (true)
         {
             if (listener_obstacle.matched_>0){  // obstacle topic

@@ -10,6 +10,14 @@ finally, restructure the folder and cleaning
 readme
 git push
 
-(kinda fixed) fix window showing problem
-(kinda fixed) in code todos
 
+VALGRIND MEMORY LEAK CHECK
+==5927== 
+==5927== HEAP SUMMARY:
+==5927==     in use at exit: 0 bytes in 0 blocks
+==5927==   total heap usage: 1 allocs, 1 frees, 1,024 bytes allocated
+==5927== 
+==5927== All heap blocks were freed -- no leaks are possible
+==5927== 
+==5927== For lists of detected and suppressed errors, rerun with: -s
+==5927== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

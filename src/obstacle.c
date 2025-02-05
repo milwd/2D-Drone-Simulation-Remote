@@ -32,17 +32,17 @@ int main() {
     while (1) {
         sem_wait(sem);
 
-        for (int i=0; i<99; i++){
+        for (int i=0; i<MAX_OBJECTS; i++){
             bb->obstacle_xs[i] = -1;
             bb->obstacle_ys[i] = -1;
         }
 
         for (int i=0; i<bb->n_obstacles; i++){ 
-            gen_x = rand() % (WIN_SIZE_X-1);
-            gen_y = rand() % (WIN_SIZE_Y-1);
+            gen_x = rand() % (bb->max_width-1);
+            gen_y = rand() % (bb->max_height-1);
             while (gen_x == bb->drone_x && gen_y == bb->drone_y){
-                gen_x = rand() % (WIN_SIZE_X-1);
-                gen_y = rand() % (WIN_SIZE_Y-1);
+                gen_x = rand() % (bb->max_width-1);
+                gen_y = rand() % (bb->max_height-1);
             }
             bb->obstacle_xs[i] = gen_x;
             bb->obstacle_ys[i] = gen_y;

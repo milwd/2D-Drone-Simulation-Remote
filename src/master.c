@@ -5,109 +5,107 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include <stdbool.h>
 #include "blackboard.h"
 
+#define MAX_PROCESSES 6
 
 void summon(char *args[], int useTerminal);
 
 int main() {
-
-    pid_t allPID[NUMBER_OF_PROCESSES];
-    const char *nameOfProcess[NUMBER_OF_PROCESSES] = {
-        "Blackboard", "Window", "Dynamics", "Keyboard", "Obstacle", "Target"
-    };
-
-    if (access(PIPE_NAME, F_OK) == 0) {
-        // FIFO exists, so remove it
-        if (unlink(PIPE_NAME) == -1) {
-            perror("Failed to remove existing FIFO");
-            exit(EXIT_FAILURE);
-        }
-        printf("Existing FIFO removed.\n");
-    }
-    if (mkfifo(PIPE_NAME, 0666) == -1) {
-        perror("mkfifo failed");
-        exit(EXIT_FAILURE);
+    int mode;
+    printf("\n=== === === ===\n\nWELCOME TO DRONE SIMULATION.\n\nChoose mode of operation ...\n"
+           "(1): Local object generation and simulation\n"
+           "(2): Remote object generation and simulation\n"
+           "(3): Object generation and publish over network\n"
+           "Enter mode: ");
+    
+    if (scanf("%d", &mode) != 1) {
+        fprintf(stderr, "Invalid input. Exiting.\n");
+        return EXIT_FAILURE;
     }
 
-    for (int i = 0; i < NUMBER_OF_PROCESSES; i++) {
+    pid_t allPIDs[MAX_PROCESSES] = {0};
+    int processCount = (mode == 2) ? MAX_PROCESSES - 1 : MAX_PROCESSES;
+    const char *processNames[MAX_PROCESSES];
+    if (mode == 1) {
+        const char *temp[] = {"Blackboard", "Window", "Dynamics", "Keyboard", "Obstacle", "Target"};
+        memcpy(processNames, temp, sizeof(temp));
+    } else if (mode == 2) {
+        const char *temp[] = {"Blackboard", "Window", "Dynamics", "Keyboard", "ObjectSub"};
+        memcpy(processNames, temp, sizeof(temp));
+    }
+    
+    if (mode == 3) {  
+        // Mode 3: Object Publisher
         pid_t pid = fork();
-        allPID[i] = pid;
-
-        if (pid == 0) {  // Child process
-            char args[MAX_MSG_LENGTH];
-            switch (i) {
-                case 0:  // Blackboard process
-                    snprintf(args, sizeof(args), "args_for_blackboard");
-                    char *argsBlackboard[] = {"./blb.out", args, NULL}; 
-                    summon(argsBlackboard, 0);
-                    break;
-                case 1:  // Window process
-                    snprintf(args, sizeof(args), "args_for_window");
-                    char *argsWindow[] = {"konsole", "konsole", "-e", "./win.out", args, NULL};
-                    summon(argsWindow, 1);
-                    break;
-                case 2:  // Dynamics process
-                    snprintf(args, sizeof(args), "args_for_dynamics");
-                    char *argsDynamics[] = {"./dyn.out", args, NULL};
-                    summon(argsDynamics, 0);
-                    break;
-                case 3:  // Keyboard process
-                    snprintf(args, sizeof(args), "args_for_keyboard");
-                    char *argsKeyboard[] = {"konsole", "konsole", "-e", "./key.out", NULL};
-                    summon(argsKeyboard, 1);
-                    break;
-                case 4:  // Obstacle process
-                    snprintf(args, sizeof(args), "args_for_obstacle");
-                    char *argsObstacle[] = {"./obs.out", args, NULL};
-                    summon(argsObstacle, 0);
-                    break;
-                case 5:  // Target process
-                    snprintf(args, sizeof(args), "args_for_target");
-                    char *argsTarget[] = {"./tar.out", args, NULL};
-                    summon(argsTarget, 0);
-                    break;
-            }
-            perror("execlp failed");
-            exit(EXIT_FAILURE);
+        if (pid == 0) {  
+            // Child process
+            char *args[] = {"./ObjectPub.out", "args_for_object", NULL};
+            summon(args, 0);
         } else if (pid < 0) {
             perror("fork failed");
-            exit(EXIT_FAILURE);
+            return EXIT_FAILURE;
         } else {
-            printf("Launched %s, PID: %d\n", nameOfProcess[i], pid);
+            printf("Launched Object Publisher, PID: %d\n", pid);
+        }
+    } else {
+        // Mode 1 or 2: Launch multiple processes
+        for (int i = 0; i < processCount; i++) {
+            pid_t pid = fork();
+            if (pid == 0) {  
+                // Child process
+                char args[256];
+                snprintf(args, sizeof(args), "args_for_%s", processNames[i]);
+                
+                char *execArgs[] = {NULL, args, NULL};
+                if (strcmp(processNames[i], "Window") == 0 || strcmp(processNames[i], "Keyboard") == 0) {
+                    execArgs[0] = "konsole"; 
+                    execArgs[1] = "-e";
+                    execArgs[2] = (strcmp(processNames[i], "Window") == 0) ? "./Window.out" : "./Keyboard.out";
+                    execArgs[3] = NULL;
+                } else {
+                    snprintf(args, sizeof(args), "args_for_%s", processNames[i]);
+                    execArgs[0] = (char*)malloc(strlen(processNames[i]) + 5);
+                    sprintf(execArgs[0], "./%s.out", processNames[i]);
+                }
+
+                summon(execArgs, (execArgs[0] == "konsole"));
+
+                free(execArgs[0]); // Free dynamically allocated memory
+                exit(EXIT_FAILURE); // Should never reach here
+            } else if (pid < 0) {
+                perror("fork failed");
+                return EXIT_FAILURE;
+            } else {
+                allPIDs[i] = pid;
+                printf("Launched %s, PID: %d\n", processNames[i], pid);
+            }
         }
     }
 
-    // Wait for the termination of processes
+    // Wait for any process to terminate
     int status;
     pid_t terminatedPid = wait(&status);
     if (terminatedPid == -1) {
-        perror("waitpid failed");
-        exit(EXIT_FAILURE);
+        perror("wait failed");
+        return EXIT_FAILURE;
     }
 
     printf("Process %d terminated. Terminating all other processes...\n", terminatedPid);
 
-    // Terminate all other processes
-    for (int i = 0; i < NUMBER_OF_PROCESSES; i++) {
-        if (allPID[i] != terminatedPid) {
-            if (kill(allPID[i], SIGTERM) == -1) {
-                perror("kill failed");
-                exit(EXIT_FAILURE);
-            }
+    // Terminate remaining processes
+    for (int i = 0; i < processCount; i++) {
+        if (allPIDs[i] != 0 && allPIDs[i] != terminatedPid) {
+            kill(allPIDs[i], SIGTERM);
         }
     }
 
-    // Wait for remaining processes to terminate
+    // Wait for all processes to finish
     while (wait(NULL) > 0);
 
-    // Clean up the named pipe
-    unlink(PIPE_NAME);
-
     printf("All processes terminated. Exiting master process.\n");
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 void summon(char *args[], int useTerminal) {
@@ -115,5 +113,4 @@ void summon(char *args[], int useTerminal) {
         perror("execvp failed");
         exit(EXIT_FAILURE);
     }
-    
 }
