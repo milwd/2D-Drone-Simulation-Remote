@@ -128,8 +128,8 @@ double calculate_score(newBlackboard *bb) {
 }
 
 void initialize_logger() {
-    if (access("simulation.log", F_OK) == 0) {
-        if (unlink("simulation.log") == 0) {
+    if (access("./logs/simulation.log", F_OK) == 0) {
+        if (unlink("./logs/simulation.log") == 0) {
             printf("Existing simulation.log file deleted successfully.\n");
         } else {
             perror("Failed to delete simulation.log");
@@ -138,7 +138,7 @@ void initialize_logger() {
         printf("No existing simulation.log file found.\n");
     }
     if (!log_file) {
-        log_file = fopen("simulation.log", "a");
+        log_file = fopen("./logs/simulation.log", "a");
         if (!log_file) {
             perror("Unable to open log file");
             return;

@@ -59,7 +59,7 @@ typedef struct {
 
 static inline void logger(const char *format, ...) {
     if (!log_file) {
-        log_file = fopen("simulation.log", "a");
+        log_file = fopen("./logs/simulation.log", "a");
         if (!log_file) {
             perror("Unable to open log file");
             return;

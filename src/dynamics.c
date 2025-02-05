@@ -50,7 +50,7 @@ int main() {
         compute_attractive_force(&attractive_Fx, &attractive_Fy, bb);
         Fx += repulsive_Fx + attractive_Fx;
         Fy += repulsive_Fy + attractive_Fy;
-        printf("at_x: %f, at_y: %f, rp_x: %f, rp_y: %f, x: %d, y: %d\n", attractive_Fx, attractive_Fy, repulsive_Fx, repulsive_Fy, bb->drone_x, bb->drone_y);
+        // printf("at_x: %f, at_y: %f, rp_x: %f, rp_y: %f, x: %d, y: %d\n", attractive_Fx, attractive_Fy, repulsive_Fx, repulsive_Fy, bb->drone_x, bb->drone_y);
 
         double x_i_new = (1/(mass+visc_damp_coef*DT)) * (Fx * DT * DT - mass * (x_i_minus_1-2*x_i) + visc_damp_coef * DT * x_i);
         double y_i_new = (1/(mass+visc_damp_coef*DT)) * (Fy * DT * DT - mass * (y_i_minus_1-2*y_i) + visc_damp_coef * DT * y_i);
