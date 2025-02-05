@@ -26,17 +26,16 @@ int main() {
         perror("sem_open failed");
         return 1;
     }
-    srand((unsigned int)time(NULL));
+    int fd = open_watchdog_pipe(PIPE_TARGET);
 
+    srand((unsigned int)time(NULL));
     int gen_x, gen_y;
     while (1) {
         sem_wait(sem);
-
         for (int i=0; i<99; i++){
             bb->target_xs[i] = -1;
             bb->target_ys[i] = -1;
         }
-
         for (int i=0; i<bb->n_targets; i++){
             gen_x = rand() % (bb->max_width-1);
             gen_y = rand() % (bb->max_height-1);
@@ -47,13 +46,13 @@ int main() {
             bb->target_xs[i] = gen_x;
             bb->target_ys[i] = gen_y;
         }
-
         sem_post(sem);
+        send_heartbeat(fd);
         sleep(6);
     }
 
+    if (fd >= 0) { close(fd); }
     sem_close(sem);
-    // shmdt(bb);
     munmap(bb, sizeof(newBlackboard));
 
     return 0;

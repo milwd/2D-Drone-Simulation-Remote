@@ -8,8 +8,9 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
-#include "blackboard.h"
 #include <signal.h>
+#include <time.h>
+#include "blackboard.h"
 
 
 void update_forces(int key, int *Fx, int *Fy, newBlackboard *bb);
@@ -32,6 +33,7 @@ int main(int argc, char *argv[]) {
         perror("sem_open failed");
         return 1;
     }
+    int fd = open_watchdog_pipe(PIPE_KEYBOARD);
 
     int Fx = 0, Fy = 0;
 
@@ -74,13 +76,14 @@ int main(int argc, char *argv[]) {
     wattrset(win, A_NORMAL);
     // some efforts has been made to reduce the memory consumption of subwindows
 
+    time_t now = time(NULL);
     while (true) {  
         for (int i = 0; i<sizeof(subwindows)/sizeof(subwindows[0]); i++){
             touchwin(subwindows[i]); wrefresh(subwindows[i]);
         }
         mvwprintw(win, 4, 3, "Time Elapsed: %.2f", bb->stats.time_elapsed);
         mvwprintw(win, 6, 3, "Score: %.2f", bb->score);
-        mvwprintw(win, 9, 3, "Command Forces: Fx = %d, Fy = %d", Fx, Fy);
+        mvwprintw(win, 9, 3, "Command Forces: Fx = %d  , Fy = %d  ", Fx, Fy);
         touchwin(win);
         wrefresh(win);
 
@@ -105,9 +108,14 @@ int main(int argc, char *argv[]) {
         }
         update_forces(ch, &Fx, &Fy, bb);
         sem_post(sem);
+        if (difftime(time(NULL), now) >= 1){
+            send_heartbeat(fd);
+            now = time(NULL);
+        }
         // refresh();
     }
     
+    if (fd >= 0) { close(fd); }
     delwin(win);
     endwin();
     sem_close(sem);

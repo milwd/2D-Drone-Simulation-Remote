@@ -3,22 +3,35 @@
 
 #include <pthread.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
 
 extern pthread_mutex_t logger_mutex;
 #define SHM_NAME "/blackboard_shm"
 #define SEM_NAME "/blackboard_sem"
 #define PARAM_FILE "parameters.txt"
-// #define PIPE_NAME "/tmp/drone_pipe"
+#define PIPE_BLACKBOARD "/tmp/blackboard_pipe"
+#define PIPE_DYNAMICS "/tmp/dynamics_pipe"
+#define PIPE_KEYBOARD "/tmp/keyboard_pipe"
+#define PIPE_WINDOW "/tmp/window_pipe"
+#define PIPE_OBSTACLE "/tmp/obstacle_pipe"
+#define PIPE_TARGET "/tmp/target_pipe"
 
 static FILE *log_file = NULL;
 pthread_mutex_t logger_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-#define NUMBER_OF_PROCESSES 6
+#define NUMBER_OF_PROCESSES 7
 #define MAX_MSG_LENGTH 256
 
 #define WIN_SIZE_X 200
 #define WIN_SIZE_Y 50
 #define RENDER_DELAY 100000 // microseconds
+#define RETRY_DELAY 50000
+#define MAX_RETRIES 20
+#define TIMEOUT_SECONDS 10
 
 #define MAX_OBJECTS 100  
 
@@ -77,6 +90,31 @@ static inline void logger(const char *format, ...) {
     fprintf(log_file, "\n");
     fflush(log_file);
     pthread_mutex_unlock(&logger_mutex);
+}
+
+int open_watchdog_pipe(const char *pipe_name) {
+    int fd, retries = 0;
+    while ((fd = open(pipe_name, O_RDWR | O_NONBLOCK)) < 0 && retries < MAX_RETRIES) {
+        if (errno == ENOENT) {  // FIFO does not exist yet
+            usleep(RETRY_DELAY);  // Wait and retry
+            retries++;
+        } else {
+            perror("Failed to open watchdog pipe");
+            return -1;
+        }
+    }
+    return fd; 
+}
+
+void send_heartbeat(int fd) {
+    // int fd = open(pipe_name, O_WRONLY | O_NONBLOCK);
+    // if (fd < 0) {
+    //     perror("Failed to open watchdog pipe");
+    //     exit(EXIT_FAILURE);
+    // }
+    if (write(fd, "HB", 2) < 0){
+        perror("Failed to write to watchdog pipe");
+    };
 }
 
 #endif 

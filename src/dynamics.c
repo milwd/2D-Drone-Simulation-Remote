@@ -8,6 +8,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <math.h>
+#include <time.h>
 #include <stdbool.h>
 
 #include "blackboard.h"
@@ -34,27 +35,31 @@ int main() {
         perror("sem_open failed");
         return 1;
     }
+    int fd = open_watchdog_pipe(PIPE_DYNAMICS);
+    // printf("dynamics fd: %d\n", fd);
 
     double vx = 0, vy = 0;
-    double x_i = bb->drone_x, x_i_minus_1 = bb->drone_x;
-    double y_i = bb->drone_y, y_i_minus_1 = bb->drone_y;
+    double Fx, Fy, repulsive_Fx, repulsive_Fy, attractive_Fx=0, attractive_Fy=0;
+    double x_i = bb->drone_x, x_i_minus_1 = bb->drone_x, x_i_new;
+    double y_i = bb->drone_y, y_i_minus_1 = bb->drone_y, y_i_new;
+    time_t now = time(NULL);
 
     while (1){
         sem_wait(sem);
 
-        double Fx = bb->command_force_x;
-        double Fy = bb->command_force_y;
-        double repulsive_Fx = 0.0, repulsive_Fy = 0.0;
-        double attractive_Fx = 0.0, attractive_Fy = 0.0;
-        compute_repulsive_force(&repulsive_Fx, &repulsive_Fy, bb);
-        compute_attractive_force(&attractive_Fx, &attractive_Fy, bb);
+        Fx = bb->command_force_x;
+        Fy = bb->command_force_y;
+        repulsive_Fx = 0.0, repulsive_Fy = 0.0;
+        attractive_Fx = 0.0, attractive_Fy = 0.0;
+        // if (bb->state != 0){  // only calculate these when running. the rest of the loop doesn't matter because they WILL be 0
+            compute_repulsive_force(&repulsive_Fx, &repulsive_Fy, bb);
+            compute_attractive_force(&attractive_Fx, &attractive_Fy, bb);
+        // }
         Fx += repulsive_Fx + attractive_Fx;
         Fy += repulsive_Fy + attractive_Fy;
-        // printf("at_x: %f, at_y: %f, rp_x: %f, rp_y: %f, x: %d, y: %d\n", attractive_Fx, attractive_Fy, repulsive_Fx, repulsive_Fy, bb->drone_x, bb->drone_y);
 
-        double x_i_new = (1/(mass+visc_damp_coef*DT)) * (Fx * DT * DT - mass * (x_i_minus_1-2*x_i) + visc_damp_coef * DT * x_i);
-        double y_i_new = (1/(mass+visc_damp_coef*DT)) * (Fy * DT * DT - mass * (y_i_minus_1-2*y_i) + visc_damp_coef * DT * y_i);
-
+        x_i_new = (1/(mass+visc_damp_coef*DT)) * (Fx * DT * DT - mass * (x_i_minus_1-2*x_i) + visc_damp_coef * DT * x_i);
+        y_i_new = (1/(mass+visc_damp_coef*DT)) * (Fy * DT * DT - mass * (y_i_minus_1-2*y_i) + visc_damp_coef * DT * y_i);
         bb->drone_x = x_i_new;
         bb->drone_y = y_i_new;
         x_i_minus_1 = x_i;
@@ -87,8 +92,14 @@ int main() {
             bb->stats.distance_traveled += sqrt((x_i - x_i_minus_1) * (x_i - x_i_minus_1) + (y_i - y_i_minus_1) * (y_i - y_i_minus_1));
         }
         sem_post(sem);
+        // printf("time now and before: %ld %ld\n", time(NULL), now);
+        if (difftime(time(NULL), now) >= 1){
+            send_heartbeat(fd);
+            now = time(NULL);
+        }
         usleep(DT * 1000000);
     }
+    if (fd >= 0) { close(fd); }
     munmap(bb, sizeof(newBlackboard));
     return 0;
 }

@@ -239,11 +239,17 @@ public:
         return true;
     }
 
-    void run()
+    void run(int fd_obs, int fd_tar)
     {
+        time_t now = time(NULL);
         while (true)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            if (difftime(time(NULL), now) >= 0.5){
+                send_heartbeat(fd_obs);
+                send_heartbeat(fd_tar);
+                now = time(NULL);
+            }
         }
     }
 
@@ -273,14 +279,17 @@ int main()
         perror("sem_open failed");
         return 1;
     }
+    int fd_obs = open_watchdog_pipe(PIPE_OBSTACLE);
+    int fd_tar = open_watchdog_pipe(PIPE_TARGET);
     std::cout << "Starting subscriber." << std::endl;
 
     CustomIdlSubscriber* mysub = new CustomIdlSubscriber();
-    if (mysub->init())
-    {
-        mysub->run();
+    if (mysub->init()){
+        mysub->run(fd_obs, fd_tar);
     }
 
+    if (fd_obs >= 0) { close(fd_obs); }
+    if (fd_tar >= 0) { close(fd_tar); }
     delete mysub;
     return 0;
 }

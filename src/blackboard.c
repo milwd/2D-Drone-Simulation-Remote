@@ -11,14 +11,22 @@
 #include <sys/wait.h>
 #include <stdbool.h>
 #include "blackboard.h"
+#include <sys/stat.h>
 
 
 void read_parameters(int *num_obstacles, int *num_targets, int *mass, int *visc_damp_coef, int *obst_repl_coef, int *radius);
 double calculate_score(newBlackboard *bb);
 void initialize_logger();
 void cleanup_logger();
+void create_named_pipe(const char *pipe_name);
 
 int main() {
+    create_named_pipe(PIPE_BLACKBOARD);
+    create_named_pipe(PIPE_DYNAMICS);
+    create_named_pipe(PIPE_KEYBOARD);
+    create_named_pipe(PIPE_WINDOW);
+    create_named_pipe(PIPE_OBSTACLE);
+    create_named_pipe(PIPE_TARGET);
     int shm_fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
     if (shm_fd == -1) {
         perror("shm_open failed");
@@ -34,12 +42,15 @@ int main() {
         return 1;
     }
     memset(bb, 0, sizeof(newBlackboard));
-    sem_t *sem = sem_open(SEM_NAME, O_CREAT, 0666, 0);
+    sem_t *sem = sem_open(SEM_NAME, O_CREAT, 0666, 0); // works like a mutex TODO check
     if (sem == SEM_FAILED) {
         perror("sem_open failed");
         return 1;
     }
+    int fd = open_watchdog_pipe(PIPE_BLACKBOARD);    
     initialize_logger();
+
+    logger("Blackboard server started...");
 
     bb->score = 0.0;
     bb->drone_x = 2;
@@ -56,23 +67,16 @@ int main() {
     bb->command_force_y = 0;
     bb->max_width   = 20;
     bb->max_height  = 20;
-
     bb->stats.hit_obstacles = 0;
     bb->stats.hit_targets = 0;
     bb->stats.time_elapsed = 0.0;
     bb->stats.distance_traveled = 0.0;
-
     bb->state = 0;  // 0 for paused or waiting, 1 for running, 2 for quit
-
-    logger("Blackboard server started...");
-
 
     int n_targets, n_obstacles;
     while (1) {
         sem_wait(sem);
-
         bb->score = calculate_score(bb);
-        
         read_parameters(&n_obstacles, &n_targets, &mass, &visc_damp_coef, &obst_repl_coef, &radius);
         if (bb->n_obstacles != n_obstacles) {
             bb->n_obstacles = n_obstacles;
@@ -80,11 +84,13 @@ int main() {
         if (bb->n_targets != n_targets) {
             bb->n_targets = n_targets;
         }
-
         sem_post(sem);
+        printf("mypid : %d", getpid());
+        send_heartbeat(fd);
         sleep(5);  // freq of 0.2 Hz  
     }
 
+    if (fd >= 0) { close(fd); }
     cleanup_logger();
     sem_close(sem);
     sem_unlink(SEM_NAME);
@@ -155,3 +161,11 @@ void cleanup_logger() {
     pthread_mutex_unlock(&logger_mutex);
 }
 
+void create_named_pipe(const char *pipe_name) {
+    if (access(pipe_name, F_OK) == -1) {
+        if (mkfifo(pipe_name, 0666) == -1) {
+            perror("Failed to create named pipe");
+            exit(EXIT_FAILURE);
+        }
+    }
+}

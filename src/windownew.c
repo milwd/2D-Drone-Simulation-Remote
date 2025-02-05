@@ -11,6 +11,7 @@
 #include <string.h>
 #include <signal.h>
 #include <stdbool.h>
+#include <time.h>
 #include "blackboard.h"
 
 
@@ -35,6 +36,7 @@ int main(int argc, char *argv[]) {
         perror("sem_open failed");
         return 1;
     }
+    int fd = open_watchdog_pipe(PIPE_WINDOW);
 
     // close(STDIN_FILENO); // close stdin to avoid keyboard input
 
@@ -52,6 +54,7 @@ int main(int argc, char *argv[]) {
     wrefresh(stdscr);
     // nodelay(win, TRUE);
     
+    time_t now = time(NULL);
     while (1){  // TODO FIND OUT WHY VISUALIZATION CLEARS WHEN RENDER-GAME
         sem_wait(sem);
         bb->max_height  = LINES;
@@ -76,9 +79,14 @@ int main(int argc, char *argv[]) {
             render_visualization(win2, bb);
         }
         sem_post(sem);
+        if (difftime(time(NULL), now) >= 1){
+            send_heartbeat(fd);
+            now = time(NULL);
+        }
         usleep(RENDER_DELAY);
     }
 
+    if (fd >= 0) { close(fd); }
     delwin(win);
     delwin(win2);
     endwin();

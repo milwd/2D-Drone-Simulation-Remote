@@ -8,7 +8,6 @@
 #include <stdbool.h>
 #include "blackboard.h"
 
-#define MAX_PROCESSES 6
 
 void summon(char *args[], int useTerminal);
 
@@ -24,15 +23,16 @@ int main() {
         fprintf(stderr, "Invalid input. Exiting.\n");
         return EXIT_FAILURE;
     }
+    printf("\n=== === === ===\n\n");
 
-    pid_t allPIDs[MAX_PROCESSES] = {0};
-    int processCount = (mode == 2) ? MAX_PROCESSES - 1 : MAX_PROCESSES;
-    const char *processNames[MAX_PROCESSES];
+    pid_t allPIDs[NUMBER_OF_PROCESSES] = {0};
+    int processCount = (mode == 2) ? NUMBER_OF_PROCESSES - 1 : NUMBER_OF_PROCESSES;
+    const char *processNames[NUMBER_OF_PROCESSES];
     if (mode == 1) {
-        const char *temp[] = {"Blackboard", "Window", "Dynamics", "Keyboard", "Obstacle", "Target"};
+        const char *temp[] = {"Blackboard", "Window", "Dynamics", "Keyboard", "Watchdog", "Obstacle", "Target"};
         memcpy(processNames, temp, sizeof(temp));
     } else if (mode == 2) {
-        const char *temp[] = {"Blackboard", "Window", "Dynamics", "Keyboard", "ObjectSub"};
+        const char *temp[] = {"Blackboard", "Window", "Dynamics", "Keyboard", "Watchdog", "ObjectSub"};
         memcpy(processNames, temp, sizeof(temp));
     }
     
