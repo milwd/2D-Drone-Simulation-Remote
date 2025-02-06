@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     int fd = open_watchdog_pipe(PIPE_WINDOW);
+    logger("Window process started...");
 
     // close(STDIN_FILENO); // close stdin to avoid keyboard input
 

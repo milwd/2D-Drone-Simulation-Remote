@@ -12,9 +12,10 @@
 #include <stdbool.h>
 #include "blackboard.h"
 #include <sys/stat.h>
+#include <cjson/cJSON.h>
 
 
-void read_parameters(int *num_obstacles, int *num_targets, int *mass, int *visc_damp_coef, int *obst_repl_coef, int *radius);
+void read_json(newBlackboard *bb);
 double calculate_score(newBlackboard *bb);
 void initialize_logger();
 void cleanup_logger();
@@ -48,44 +49,30 @@ int main() {
         return 1;
     }
     int fd = open_watchdog_pipe(PIPE_BLACKBOARD);    
+    read_json(bb);
     initialize_logger();
 
     logger("Blackboard server started...");
 
+    // INITIALIZE THE BLACKBOARD
+    bb->state = 0;  // 0 for paused or waiting, 1 for running, 2 for quit
     bb->score = 0.0;
     bb->drone_x = 2;
     bb->drone_y = 2;
-    bb->n_obstacles = 5;
-    bb->n_targets = 5;
-    for (int i = 0; i < 99; i++) {
-        bb->obstacle_xs[i] = -1;
-        bb->obstacle_ys[i] = -1;
-        bb->target_xs[i] = -1;
-        bb->target_ys[i] = -1;
+    for (int i = 0; i < MAX_OBJECTS; i++) {
+        bb->obstacle_xs[i] = -1; bb->obstacle_ys[i] = -1;
+        bb->target_xs[i] = -1; bb->target_ys[i] = -1;
     }
-    bb->command_force_x = 0; 
-    bb->command_force_y = 0;
-    bb->max_width   = 20;
-    bb->max_height  = 20;
-    bb->stats.hit_obstacles = 0;
-    bb->stats.hit_targets = 0;
-    bb->stats.time_elapsed = 0.0;
-    bb->stats.distance_traveled = 0.0;
-    bb->state = 0;  // 0 for paused or waiting, 1 for running, 2 for quit
-
-    int n_targets, n_obstacles;
+    bb->command_force_x = 0; bb->command_force_y = 0;
+    bb->max_width   = 20; bb->max_height  = 20; // changes during runtime
+    bb->stats.hit_obstacles = 0; bb->stats.hit_targets = 0;
+    bb->stats.time_elapsed = 0.0; bb->stats.distance_traveled = 0.0;
+    
     while (1) {
         sem_wait(sem);
         bb->score = calculate_score(bb);
-        read_parameters(&n_obstacles, &n_targets, &mass, &visc_damp_coef, &obst_repl_coef, &radius);
-        if (bb->n_obstacles != n_obstacles) {
-            bb->n_obstacles = n_obstacles;
-        }
-        if (bb->n_targets != n_targets) {
-            bb->n_targets = n_targets;
-        }
+        read_json(bb);
         sem_post(sem);
-        printf("mypid : %d", getpid());
         send_heartbeat(fd);
         sleep(5);  // freq of 0.2 Hz  
     }
@@ -100,29 +87,36 @@ int main() {
     return 0;
 }
 
-void read_parameters(int *num_obstacles, int *num_targets, int *mass, int *visc_damp_coef, int *obst_repl_coef, int *radius) {
-    FILE *file = fopen(PARAM_FILE, "r");
-    if (file == NULL) {
-        perror("Failed to open parameter file");
-        return;
+void read_json(newBlackboard *bb) {
+    const char *filename = JSON_PATH;
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        perror("Could not open file");
     }
-    char line[256];
-    while (fgets(line, sizeof(line), file)) {
-        if (strncmp(line, "num_obstacles=", 14) == 0) {
-            *num_obstacles = atoi(line + 14);
-        } else if (strncmp(line, "num_targets=", 12) == 0) {
-            *num_targets = atoi(line + 12);
-        } else if (strncmp(line, "mass=", 5) == 0) {
-            *mass = atoi(line + 5);
-        } else if (strncmp(line, "visc_damp_coef=", 15) == 0) {
-            *visc_damp_coef = atoi(line + 15);
-        } else if (strncmp(line, "obst_repl_coef=", 15) == 0) {
-            *obst_repl_coef = atoi(line + 15);
-        } else if (strncmp(line, "radius=", 7) == 0) {
-            *radius = atoi(line + 7);
-        } 
+    fseek(file, 0, SEEK_END);
+    long length = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    char *data = (char *)malloc(length + 1);
+    if (!data) {
+        perror("Memory allocation failed for JSON config");
+        fclose(file);
     }
+    fread(data, 1, length, file);
+    data[length] = '\0';
     fclose(file);
+    cJSON *json = cJSON_Parse(data);
+    if (!json) {
+        printf("Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+    }    
+    cJSON *item;  // TODO CHECK FOR NULL and CORRUPTED JSON
+    if ((item = cJSON_GetObjectItem(json, "num_obstacles")))    bb->n_obstacles = item->valueint;
+    if ((item = cJSON_GetObjectItem(json, "num_targets")))      bb->n_targets = item->valueint;
+    if ((item = cJSON_GetObjectItem(json, "mass")))             bb->physix.mass = item->valueint;
+    if ((item = cJSON_GetObjectItem(json, "visc_damp_coef")))   bb->physix.visc_damp_coef = item->valueint;
+    if ((item = cJSON_GetObjectItem(json, "obst_repl_coef")))   bb->physix.obst_repl_coef = item->valueint;
+    if ((item = cJSON_GetObjectItem(json, "radius")))           bb->physix.radius = item->valueint;
+    cJSON_Delete(json);
+    free(data);
 }
 
 double calculate_score(newBlackboard *bb) {

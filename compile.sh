@@ -1,5 +1,5 @@
 gcc -o master               src/master.c
-gcc -o bins/Blackboard.out  src/blackboard.c
+gcc -o bins/Blackboard.out  src/blackboard.c -lcjson
 gcc -o bins/Dynamics.out    src/dynamics.c -lm
 gcc -o bins/Keyboard.out    src/keyboard.c -lncurses
 gcc -o bins/Window.out      src/windownew.c -lncurses

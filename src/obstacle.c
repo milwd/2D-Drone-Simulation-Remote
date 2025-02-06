@@ -27,6 +27,7 @@ int main() {
         return 1;
     }
     int fd = open_watchdog_pipe(PIPE_OBSTACLE);
+    logger("Obstacle process started...");
 
     srand((unsigned int)time(NULL));
     int gen_x, gen_y;

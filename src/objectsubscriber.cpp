@@ -281,8 +281,9 @@ int main()
     }
     int fd_obs = open_watchdog_pipe(PIPE_OBSTACLE);
     int fd_tar = open_watchdog_pipe(PIPE_TARGET);
-    std::cout << "Starting subscriber." << std::endl;
 
+    logger("Obstacle and Target subscriber started...");
+    
     CustomIdlSubscriber* mysub = new CustomIdlSubscriber();
     if (mysub->init()){
         mysub->run(fd_obs, fd_tar);

@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     int fd = open_watchdog_pipe(PIPE_KEYBOARD);
+    logger("Keyboard process started..."); 
 
     int Fx = 0, Fy = 0;
 
@@ -153,6 +154,7 @@ void reset_game(newBlackboard *bb) {
     // char text [30];
     // char *format = "Final score %.2f\n";
     // logger(sprintf(text, "Score recorded %.2f\n",  bb->score));
+    bb->state = 0;
     bb->score = 0;
     bb->drone_x = 2;
     bb->drone_y = 2;
@@ -162,13 +164,10 @@ void reset_game(newBlackboard *bb) {
     bb->stats.hit_obstacles = 0;
     bb->stats.hit_targets = 0;
     bb->stats.distance_traveled = 0;
-    bb->state = 0;
     for (int i = 0; i < MAX_OBJECTS; i++) {
-        bb->obstacle_xs[i] = -1;
-        bb->obstacle_ys[i] = -1;
+        bb->obstacle_xs[i] = -1; bb->obstacle_ys[i] = -1;
     }
     for (int i = 0; i < MAX_OBJECTS; i++) {
-        bb->target_xs[i] = -1;
-        bb->target_ys[i] = -1;
+        bb->target_xs[i] = -1; bb->target_ys[i] = -1;
     }
 }

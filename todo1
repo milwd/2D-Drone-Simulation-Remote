@@ -1,8 +1,6 @@
 todo 
 
 server discovery
-make readable from parameters
-# if possible read yaml not txt
 state machine
 
 clearning loggers and ...

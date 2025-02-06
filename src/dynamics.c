@@ -10,7 +10,6 @@
 #include <math.h>
 #include <time.h>
 #include <stdbool.h>
-
 #include "blackboard.h"
 #include "logger.h"
 
@@ -36,7 +35,7 @@ int main() {
         return 1;
     }
     int fd = open_watchdog_pipe(PIPE_DYNAMICS);
-    // printf("dynamics fd: %d\n", fd);
+    logger("Dynamics started...");
 
     double vx = 0, vy = 0;
     double Fx, Fy, repulsive_Fx, repulsive_Fy, attractive_Fx=0, attractive_Fy=0;
@@ -51,15 +50,15 @@ int main() {
         Fy = bb->command_force_y;
         repulsive_Fx = 0.0, repulsive_Fy = 0.0;
         attractive_Fx = 0.0, attractive_Fy = 0.0;
-        // if (bb->state != 0){  // only calculate these when running. the rest of the loop doesn't matter because they WILL be 0
+        if (bb->state != 0){  // only calculate these when running. the rest of the loop doesn't matter because they WILL be 0
             compute_repulsive_force(&repulsive_Fx, &repulsive_Fy, bb);
             compute_attractive_force(&attractive_Fx, &attractive_Fy, bb);
-        // }
+        }
         Fx += repulsive_Fx + attractive_Fx;
         Fy += repulsive_Fy + attractive_Fy;
 
-        x_i_new = (1/(mass+visc_damp_coef*DT)) * (Fx * DT * DT - mass * (x_i_minus_1-2*x_i) + visc_damp_coef * DT * x_i);
-        y_i_new = (1/(mass+visc_damp_coef*DT)) * (Fy * DT * DT - mass * (y_i_minus_1-2*y_i) + visc_damp_coef * DT * y_i);
+        x_i_new = (1/(bb->physix.mass+bb->physix.visc_damp_coef*DT)) * (Fx * DT * DT - bb->physix.mass * (x_i_minus_1-2*x_i) + bb->physix.visc_damp_coef * DT * x_i);
+        y_i_new = (1/(bb->physix.mass+bb->physix.visc_damp_coef*DT)) * (Fy * DT * DT - bb->physix.mass * (y_i_minus_1-2*y_i) + bb->physix.visc_damp_coef * DT * y_i);
         bb->drone_x = x_i_new;
         bb->drone_y = y_i_new;
         x_i_minus_1 = x_i;
@@ -116,27 +115,27 @@ void compute_repulsive_force(double *Fx, double *Fy, newBlackboard *bb) {
         dx = bb->obstacle_xs[i] - bb->drone_x;  
         dy = bb->obstacle_ys[i] - bb->drone_y;
         dist = sqrt(dx * dx + dy * dy);
-        if (dist < radius && dist > 0) {
-            repulsive = obst_repl_coef * 3 * (1.0 / dist - 1.0 / radius) / (dist * dist + EPSILON);
+        if (dist < bb->physix.radius && dist > 0) {
+            repulsive = bb->physix.obst_repl_coef * 3 * (1.0 / dist - 1.0 / bb->physix.radius) / (dist * dist + EPSILON);
             *Fx -= repulsive * (dx / (dist + EPSILON));
             *Fy -= repulsive * (dy / (dist + EPSILON));
         }
     } // Obstacles
 
-    if (bb->drone_x < radius) {
-        repulsive = obst_repl_coef * (1.0 / (bb->drone_x + EPSILON) - 1.0 / radius) / (bb->drone_x * bb->drone_x + EPSILON);
+    if (bb->drone_x < bb->physix.radius) {
+        repulsive = bb->physix.obst_repl_coef * (1.0 / (bb->drone_x + EPSILON) - 1.0 / bb->physix.radius) / (bb->drone_x * bb->drone_x + EPSILON);
         *Fx += repulsive;
     } // Left wall
-    if (bb->max_width - bb->drone_x < radius) {
-        repulsive = obst_repl_coef * (1.0 / (bb->max_width - bb->drone_x + EPSILON) - 1.0 / radius) / ((bb->max_width - bb->drone_x) * (bb->max_width - bb->drone_x) + EPSILON);
+    if (bb->max_width - bb->drone_x < bb->physix.radius) {
+        repulsive = bb->physix.obst_repl_coef * (1.0 / (bb->max_width - bb->drone_x + EPSILON) - 1.0 / bb->physix.radius) / ((bb->max_width - bb->drone_x) * (bb->max_width - bb->drone_x) + EPSILON);
         *Fx -= repulsive;
     } // Right wall
-    if (bb->drone_y < radius) {
-        repulsive = obst_repl_coef * (1.0 / (bb->drone_y + EPSILON) - 1.0 / radius) / (bb->drone_y * bb->drone_y + EPSILON);
+    if (bb->drone_y < bb->physix.radius) {
+        repulsive = bb->physix.obst_repl_coef * (1.0 / (bb->drone_y + EPSILON) - 1.0 / bb->physix.radius) / (bb->drone_y * bb->drone_y + EPSILON);
         *Fy += repulsive;
     } // Top wall
-    if (bb->max_height - bb->drone_y < radius) {
-        repulsive = obst_repl_coef * (1.0 / (bb->max_height - bb->drone_y + EPSILON) - 1.0 / radius) / ((bb->max_height - bb->drone_y) * (bb->max_height - bb->drone_y) + EPSILON);
+    if (bb->max_height - bb->drone_y < bb->physix.radius) {
+        repulsive = bb->physix.obst_repl_coef * (1.0 / (bb->max_height - bb->drone_y + EPSILON) - 1.0 / bb->physix.radius) / ((bb->max_height - bb->drone_y) * (bb->max_height - bb->drone_y) + EPSILON);
         *Fy -= repulsive;
     } // Bottom wall
 
@@ -160,8 +159,8 @@ void compute_attractive_force(double *Fx, double *Fy, newBlackboard *bb) {
         dy = bb->target_ys[i] - bb->drone_y;
         dist = sqrt(dx * dx + dy * dy);
 
-        if (dist < radius && dist > 0) {
-            attractive = obst_repl_coef * 0.05 * (dist);
+        if (dist < bb->physix.radius && dist > 0) {
+            attractive = bb->physix.obst_repl_coef * 0.05 * (dist);
             *Fx += attractive * (dx / (dist + EPSILON));
             *Fy += attractive * (dy / (dist + EPSILON));
         }
