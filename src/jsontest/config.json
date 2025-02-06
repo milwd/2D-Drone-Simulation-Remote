@@ -10,6 +10,7 @@
     "domainnum": 0,
     "topicobstacles": "Topic1",
     "topictargets": "Topic2",
+    "discoveryport": 8888,
     "transmitterip": "127.0.0.1",
 
     "receiverip": "127.0.0.1"

@@ -52,7 +52,7 @@ int main() {
     read_json(bb);
     initialize_logger();
 
-    logger("Blackboard server started...");
+    logger("Blackboard server started. PID: %d", getpid());
 
     // INITIALIZE THE BLACKBOARD
     bb->state = 0;  // 0 for paused or waiting, 1 for running, 2 for quit

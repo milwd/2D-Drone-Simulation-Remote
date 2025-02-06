@@ -20,7 +20,6 @@ void render_game(WINDOW *win, newBlackboard *bb);
 void render_visualization(WINDOW * win, newBlackboard * bb);
 
 int main(int argc, char *argv[]) {
-    logger("Window process started...");  // TODO ADD PID
     int shm_fd = shm_open(SHM_NAME, O_RDWR, 0666);
     if (shm_fd == -1) {
         perror("shm_open failed");
@@ -37,7 +36,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     int fd = open_watchdog_pipe(PIPE_WINDOW);
-    logger("Window process started...");
+    logger("Window process started. PID: %d", getpid());
 
     // close(STDIN_FILENO); // close stdin to avoid keyboard input
 

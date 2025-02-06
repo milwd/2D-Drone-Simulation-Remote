@@ -47,7 +47,7 @@ int main() {
             perror("fork failed");
             return EXIT_FAILURE;
         } else {
-            printf("Launched Object Publisher, PID: %d\n", pid);
+            printf("Launched Object Publisher, PID: %d\n", pid); 
         }
     } else {
         for (int i = 0; i < processCount; i++) {
@@ -71,14 +71,14 @@ int main() {
 
                 summon(execArgs, (execArgs[0] == "konsole"));
 
-                free(execArgs[0]); // Free dynamically allocated memory
-                exit(EXIT_FAILURE); // Should never reach here
+                free(execArgs[0]);  
+                exit(EXIT_FAILURE); 
             } else if (pid < 0) {
                 perror("fork failed");
                 return EXIT_FAILURE;
             } else {
                 allPIDs[i] = pid;
-                printf("Launched %s, PID: %d\n", processNames[i], pid);
+                printf("Launched %s, PID: %d\n", processNames[i], pid);  // TODO DELETE LATER
             }
         }
     }

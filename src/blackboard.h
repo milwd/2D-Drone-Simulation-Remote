@@ -49,14 +49,14 @@ pthread_mutex_t logger_mutex = PTHREAD_MUTEX_INITIALIZER;
 // int radius = R;
 
 // COMMON STRUCTURES and DATA STRUCTURES
-typedef struct {
-    int num_obstacles;
-    int num_targets;
-    int mass;
-    int visc_damp_coef;
-    int obst_repl_coef;
-    int radius;
-} SimulationConfig;
+// typedef struct {
+//     int num_obstacles;
+//     int num_targets;
+//     int mass;
+//     int visc_damp_coef;
+//     int obst_repl_coef;
+//     int radius;
+// } SimulationConfig;
 
 typedef struct {
     int hit_obstacles;

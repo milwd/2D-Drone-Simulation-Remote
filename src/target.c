@@ -27,7 +27,7 @@ int main() {
         return 1;
     }
     int fd = open_watchdog_pipe(PIPE_TARGET);
-    logger("Target process started...");
+    logger("Target process started. PID: %d", getpid());
 
     srand((unsigned int)time(NULL));
     int gen_x, gen_y;

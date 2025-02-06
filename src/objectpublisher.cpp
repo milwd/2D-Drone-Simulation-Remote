@@ -10,6 +10,7 @@
 #include <fastdds/dds/publisher/DataWriterListener.hpp>
 #include <fastdds/dds/publisher/Publisher.hpp>
 #include <fastdds/dds/topic/TypeSupport.hpp>
+#include <fastdds/rtps/transport/TCPv4TransportDescriptor.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ipc.h>
@@ -23,6 +24,7 @@
 #include "blackboard.h"
 
 using namespace eprosima::fastdds::dds;
+using namespace eprosima::fastdds::rtps;
 pthread_t obstacle_thread, target_thread;
 
 class CustomIdlPublisher
@@ -162,17 +164,32 @@ public:
     }
 
     bool init()
-    {
-
+    {   
         DomainParticipantQos participantQos;
         participantQos.name("Participant_publisher");
-        participant_ = DomainParticipantFactory::get_instance()->create_participant(0, participantQos);
 
+        participantQos.wire_protocol().builtin.discovery_config.use_SIMPLE_EndpointDiscoveryProtocol = false;
+        participantQos.wire_protocol().builtin.discovery_config.discoveryProtocol = DiscoveryProtocol::SERVER;
+
+        auto tcp_transport = std::make_shared<TCPv4TransportDescriptor>();
+        tcp_transport->set_WAN_address("127.0.0.1");  
+        tcp_transport->add_listener_port(8888);  // Listening port for discovery
+        participantQos.transport().use_builtin_transports = false;
+        participantQos.transport().user_transports.push_back(tcp_transport);
+
+        Locator_t locator;
+        locator.kind = LOCATOR_KIND_TCPv4;  
+        locator.port = 8888;  // Server listens here
+        IPLocator::setIPv4(locator, 127, 0, 0, 1);
+
+        participantQos.wire_protocol().builtin.metatrafficUnicastLocatorList.push_back(locator);
+
+        participant_ = DomainParticipantFactory::get_instance()->create_participant(0, participantQos);
         if (participant_ == nullptr)
         {
+            std::cerr << "Failed to create DomainParticipant" << std::endl;
             return false;
         }
-
         type_.register_type(participant_);
         
         publisher_ = participant_->create_publisher(PUBLISHER_QOS_DEFAULT, nullptr);
@@ -207,7 +224,7 @@ public:
         return true;
     }   
 
-    void publish(int * obj_x, int * obj_y, DataWriter* writer, Obstacles my_pubsublist)
+    int publish(int * obj_x, int * obj_y, DataWriter* writer, Obstacles my_pubsublist)
     {
         for (int i=0; i<MAX_OBJECTS; i++){ 
             int gen_x = rand() % (WIN_SIZE_X-1);
@@ -225,22 +242,24 @@ public:
         my_pubsublist.obstacles_x(obstacles_x);
         my_pubsublist.obstacles_y(obstacles_y);
         writer->write(&my_pubsublist);
+        return my_pubsublist.obstacles_number();
     }
 
     void run()
     {
         int obs_x[MAX_OBJECTS], obs_y[MAX_OBJECTS];
         int tar_x[MAX_OBJECTS], tar_y[MAX_OBJECTS];
+        int written;
         srand((unsigned int)time(NULL));
         while (true)
         {
             if (listener_obstacle.matched_>0){  // obstacle topic
-                publish(obs_x, obs_y, writer_obstacle, my_obstacles);
-                std::cout << "Message: " << my_obstacles.obstacles_number() <<"obstacles generated and SENT!" << std::endl;
+                written = publish(obs_x, obs_y, writer_obstacle, my_obstacles);
+                std::cout << "Message: " << written <<"targets generated and SENT!" << std::endl;
             }
             if (listener_target.matched_>0){    // target topic
-                publish(tar_x, tar_y, writer_target, my_targets);
-                std::cout << "Message: " << my_targets.obstacles_number() <<"targets generated and SENT!" << std::endl;
+                written = publish(tar_x, tar_y, writer_target, my_targets);
+                std::cout << "Message: " << written <<"targets generated and SENT!" << std::endl;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(3000)); //TODO IMPLEMENT TWO THREADS THAT RUN FOR TARGETS AND OBSTACLES
         }

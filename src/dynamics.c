@@ -35,7 +35,7 @@ int main() {
         return 1;
     }
     int fd = open_watchdog_pipe(PIPE_DYNAMICS);
-    logger("Dynamics started...");
+    logger("Dynamics started. PID: %d", getpid());
 
     double vx = 0, vy = 0;
     double Fx, Fy, repulsive_Fx, repulsive_Fy, attractive_Fx=0, attractive_Fy=0;

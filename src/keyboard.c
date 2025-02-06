@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     int fd = open_watchdog_pipe(PIPE_KEYBOARD);
-    logger("Keyboard process started..."); 
+    logger("Keyboard process started. PID: %d", getpid()); 
 
     int Fx = 0, Fy = 0;
 

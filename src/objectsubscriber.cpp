@@ -12,6 +12,7 @@
 #include <fastdds/dds/subscriber/SampleInfo.hpp>
 #include <fastdds/dds/subscriber/Subscriber.hpp>
 #include <fastdds/dds/topic/TypeSupport.hpp>
+#include <fastdds/rtps/transport/TCPv4TransportDescriptor.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ipc.h>
@@ -24,6 +25,8 @@
 #include "blackboard.h"
 
 using namespace eprosima::fastdds::dds;
+using namespace eprosima::fastdds::rtps;
+
 newBlackboard *bb;
 sem_t *sem;
 
@@ -200,13 +203,35 @@ public:
     {
         DomainParticipantQos participantQos;
         participantQos.name("Participant_subscriber");
-        participant_ = DomainParticipantFactory::get_instance()->create_participant(0, participantQos);
 
+        participantQos.wire_protocol().builtin.discovery_config.use_SIMPLE_EndpointDiscoveryProtocol = false;
+        participantQos.wire_protocol().builtin.discovery_config.discoveryProtocol = DiscoveryProtocol::CLIENT;
+
+        auto tcp_transport = std::make_shared<TCPv4TransportDescriptor>();
+        tcp_transport->set_WAN_address("127.0.0.1");  
+        tcp_transport->add_listener_port(8800);  // Unique port for this client
+        participantQos.transport().use_builtin_transports = false;
+        participantQos.transport().user_transports.push_back(tcp_transport);
+
+        Locator_t server_locator;
+        server_locator.kind = LOCATOR_KIND_TCPv4;
+        server_locator.port = 8888;  // Must match the Discovery Server's port
+        IPLocator::setIPv4(server_locator, 127, 0, 0, 1);
+
+        participantQos.wire_protocol().builtin.discovery_config.m_DiscoveryServers.push_back(server_locator);
+
+        Locator_t client_locator;
+        client_locator.kind = LOCATOR_KIND_TCPv4;
+        client_locator.port = 8800;  // Different from server
+        IPLocator::setIPv4(client_locator, 127, 0, 0, 1);
+        participantQos.wire_protocol().builtin.metatrafficUnicastLocatorList.push_back(client_locator);
+
+        participant_ = DomainParticipantFactory::get_instance()->create_participant(0, participantQos);
         if (participant_ == nullptr)
         {
+            std::cerr << "Failed to create DomainParticipant" << std::endl;
             return false;
         }
-
         type_.register_type(participant_);
 
         subscriber_ = participant_->create_subscriber(SUBSCRIBER_QOS_DEFAULT, nullptr);
@@ -282,7 +307,7 @@ int main()
     int fd_obs = open_watchdog_pipe(PIPE_OBSTACLE);
     int fd_tar = open_watchdog_pipe(PIPE_TARGET);
 
-    logger("Obstacle and Target subscriber started...");
+    logger("Obstacle and Target subscriber started. PID: %d", getpid());
     
     CustomIdlSubscriber* mysub = new CustomIdlSubscriber();
     if (mysub->init()){

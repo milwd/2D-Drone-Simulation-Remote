@@ -18,7 +18,7 @@ typedef struct {
 
 int main() {  // watchdog works and receives signals neglecting the state machine of the whole process. others have been implemented to send heartbeats whatever the state is. 
 
-    logger("Big brother Watchdog process is watching...");
+    logger("Big brother Watchdog process is watching. PID: %d", getpid());
 
     ComponentMonitor components[] = {
         {PIPE_BLACKBOARD,   open(PIPE_BLACKBOARD,   O_RDONLY | O_NONBLOCK), time(NULL)},
