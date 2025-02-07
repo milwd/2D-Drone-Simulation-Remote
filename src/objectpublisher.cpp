@@ -1,9 +1,6 @@
-
 #include "Generated/ObstaclesPubSubTypes.hpp"
-
 #include <chrono>
 #include <thread>
-
 #include <fastdds/dds/domain/DomainParticipant.hpp>
 #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
 #include <fastdds/dds/publisher/DataWriter.hpp>
@@ -23,9 +20,9 @@
 #include <pthread.h>
 #include "blackboard.h"
 
+
 using namespace eprosima::fastdds::dds;
 using namespace eprosima::fastdds::rtps;
-pthread_t obstacle_thread, target_thread;
 
 class CustomIdlPublisher
 {
@@ -251,7 +248,7 @@ public:
         int tar_x[MAX_OBJECTS], tar_y[MAX_OBJECTS];
         int written;
         srand((unsigned int)time(NULL));
-        while (true)
+        while (true)                                   // IDEALLY, THESE TWO WOULD BE IN SEPARATE CONCURRENT THREADS
         {
             if (listener_obstacle.matched_>0){  // obstacle topic
                 written = publish(obs_x, obs_y, writer_obstacle, my_obstacles);
@@ -261,14 +258,15 @@ public:
                 written = publish(tar_x, tar_y, writer_target, my_targets);
                 std::cout << "Message: " << written <<"targets generated and SENT!" << std::endl;
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(3000)); //TODO IMPLEMENT TWO THREADS THAT RUN FOR TARGETS AND OBSTACLES
+            std::this_thread::sleep_for(std::chrono::milliseconds(5000)); 
         }
     }
 };
 
 int main()
 {
-    std::cout << "Starting publisher." << std::endl;
+    printf("Starting publisher.\n");
+    logger("Starting publisher... NOW");
 
     CustomIdlPublisher* mypub = new CustomIdlPublisher();
     if(mypub->init())

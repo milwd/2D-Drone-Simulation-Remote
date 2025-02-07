@@ -4,6 +4,14 @@
     "mass": 1,
     "visc_damp_coef": 1,
     "obst_repl_coef": 15,
-    "radius": 8
+    "radius": 8,
+
+    "domainnum": 0,
+    "topicobstacles": "Topic1",
+    "topictargets": "Topic2",
+    "discoveryport": 8888,
+    "transmitterip": "127.0.0.1",
+
+    "receiverip": "127.0.0.1"
 }
   

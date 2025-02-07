@@ -23,12 +23,75 @@
 #include <unistd.h>
 #include <time.h>
 #include "blackboard.h"
+#include <iostream> 
+#include <fcntl.h>
+#include <cjson/cJSON.h>
 
 using namespace eprosima::fastdds::dds;
 using namespace eprosima::fastdds::rtps;
 
 newBlackboard *bb;
+ConfigDDS * cd;
 sem_t *sem;
+
+
+void read_json(ConfigDDS * cd, bool first_time) {
+    printf("Reading JSON\n");
+    const char *filename = JSON_PATH;
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        perror("Could not open file");
+    }
+    fseek(file, 0, SEEK_END);
+    long length = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    char *data = (char *)malloc(length + 1);
+    if (!data) {
+        perror("Memory allocation failed for JSON config");
+        fclose(file);
+    }
+    fread(data, 1, length, file);
+    data[length] = '\0';
+    fclose(file);
+    cJSON *json = cJSON_Parse(data);
+    if (!json) {
+        printf("Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+    }    
+    printf("parsed some json\n");
+    cJSON *item;  // TODO CHECK FOR NULL and CORRUPTED JSON
+    if (first_time) {
+        if ((item = cJSON_GetObjectItem(json, "domainnum")) && cJSON_IsNumber(item))
+            cd->domainnum = item->valueint;
+        if ((item = cJSON_GetObjectItem(json, "discoveryport")) && cJSON_IsNumber(item))
+            cd->discoveryport = item->valueint;
+        if ((item = cJSON_GetObjectItem(json, "topicobstacles")) && cJSON_IsString(item))
+            strncpy(cd->topicobstacles, item->valuestring, sizeof(cd->topicobstacles) - 1);
+        if ((item = cJSON_GetObjectItem(json, "topictargets")) && cJSON_IsString(item))
+            strncpy(cd->topictargets, item->valuestring, sizeof(cd->topictargets) - 1);
+        if ((item = cJSON_GetObjectItem(json, "transmitterip")) && cJSON_IsString(item))
+            strncpy(cd->transmitterip, item->valuestring, sizeof(cd->transmitterip) - 1);
+        if ((item = cJSON_GetObjectItem(json, "receiverip")) && cJSON_IsString(item))
+            strncpy(cd->receiverip, item->valuestring, sizeof(cd->receiverip) - 1);
+    }
+
+    cJSON_Delete(json);
+    free(data);
+}
+
+
+
+void parseIP(const char* ip, int * octets) {
+    std::stringstream test(ip);
+    std::string segment;
+    std::vector<std::string> seglist;
+    while(std::getline(test, segment, '.')){
+        seglist.push_back(segment);
+    }
+    for (int i = 0; i < seglist.size(); i++){
+        int num = std::stoi(seglist[i]);
+        octets[i] = num;
+    }
+}
 
 class CustomIdlSubscriber
 {
@@ -199,7 +262,7 @@ public:
         DomainParticipantFactory::get_instance()->delete_participant(participant_);
     }
 
-    bool init()
+    bool init(ConfigDDS *cd)
     {
         DomainParticipantQos participantQos;
         participantQos.name("Participant_subscriber");
@@ -208,30 +271,35 @@ public:
         participantQos.wire_protocol().builtin.discovery_config.discoveryProtocol = DiscoveryProtocol::CLIENT;
 
         auto tcp_transport = std::make_shared<TCPv4TransportDescriptor>();
-        tcp_transport->set_WAN_address("127.0.0.1");  
-        tcp_transport->add_listener_port(8800);  // Unique port for this client
+        tcp_transport->set_WAN_address(cd->transmitterip);
+        tcp_transport->add_listener_port(8800);
         participantQos.transport().use_builtin_transports = false;
         participantQos.transport().user_transports.push_back(tcp_transport);
 
+        int server_ip [4];
+        parseIP(cd->receiverip, &server_ip[0]);
         Locator_t server_locator;
         server_locator.kind = LOCATOR_KIND_TCPv4;
-        server_locator.port = 8888;  // Must match the Discovery Server's port
-        IPLocator::setIPv4(server_locator, 127, 0, 0, 1);
+        server_locator.port = cd->discoveryport;
+        IPLocator::setIPv4(server_locator, server_ip[0], server_ip[1], server_ip[2], server_ip[3]);
 
         participantQos.wire_protocol().builtin.discovery_config.m_DiscoveryServers.push_back(server_locator);
 
+        int client_ip [4];
+        parseIP(cd->transmitterip, &client_ip[0]);
         Locator_t client_locator;
         client_locator.kind = LOCATOR_KIND_TCPv4;
-        client_locator.port = 8800;  // Different from server
-        IPLocator::setIPv4(client_locator, 127, 0, 0, 1);
+        client_locator.port = 8800;
+        IPLocator::setIPv4(client_locator, client_ip[0], client_ip[1], client_ip[2], client_ip[3]);
+
         participantQos.wire_protocol().builtin.metatrafficUnicastLocatorList.push_back(client_locator);
 
-        participant_ = DomainParticipantFactory::get_instance()->create_participant(0, participantQos);
-        if (participant_ == nullptr)
-        {
-            std::cerr << "Failed to create DomainParticipant" << std::endl;
+        participant_ = DomainParticipantFactory::get_instance()->create_participant(cd->domainnum, participantQos);
+
+        if (participant_ == nullptr) {
             return false;
         }
+
         type_.register_type(participant_);
 
         subscriber_ = participant_->create_subscriber(SUBSCRIBER_QOS_DEFAULT, nullptr);
@@ -307,15 +375,21 @@ int main()
     int fd_obs = open_watchdog_pipe(PIPE_OBSTACLE);
     int fd_tar = open_watchdog_pipe(PIPE_TARGET);
 
+    cd = new ConfigDDS(); // Allocate memory for cd
+    read_json(cd, true);
+    printf("read ip hereeeeeeeeeee%s\n", cd->receiverip);
+
     logger("Obstacle and Target subscriber started. PID: %d", getpid());
+    printf("receiverid %s\n", cd->receiverip);
     
     CustomIdlSubscriber* mysub = new CustomIdlSubscriber();
-    if (mysub->init()){
+    if (mysub->init(cd)){
         mysub->run(fd_obs, fd_tar);
     }
 
     if (fd_obs >= 0) { close(fd_obs); }
     if (fd_tar >= 0) { close(fd_tar); }
     delete mysub;
+    delete cd; // Free memory for cd
     return 0;
 }

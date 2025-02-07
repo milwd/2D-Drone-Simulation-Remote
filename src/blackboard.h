@@ -18,6 +18,7 @@
 #define PIPE_WINDOW     "/tmp/window_pipe"
 #define PIPE_OBSTACLE   "/tmp/obstacle_pipe"
 #define PIPE_TARGET     "/tmp/target_pipe"
+#define PIPE_IPCHECK    "/tmp/ipcheck_pipe"
 
 extern pthread_mutex_t logger_mutex;
 static FILE *log_file = NULL;
@@ -38,26 +39,8 @@ pthread_mutex_t logger_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define DT  0.001           // time step
 #define MAX_OBJECTS 100     // max number of obstacles and targets
 
-// INITIAL CONDITIONS
-#define M   1     // mass
-#define K   1     // viscous damping coefficient
-#define ETA 15    // strength of the obstacle repulsion factor
-#define R   8     // radius of the drone obstacle repulsion
-// int mass = M;
-// int visc_damp_coef = K;
-// int obst_repl_coef = ETA;
-// int radius = R;
 
-// COMMON STRUCTURES and DATA STRUCTURES
-// typedef struct {
-//     int num_obstacles;
-//     int num_targets;
-//     int mass;
-//     int visc_damp_coef;
-//     int obst_repl_coef;
-//     int radius;
-// } SimulationConfig;
-
+// SHARED STRUCTURES and DATA STRUCTURES
 typedef struct {
     int hit_obstacles;
     int hit_targets;
@@ -73,8 +56,18 @@ typedef struct {
 } Physix;
 
 typedef struct {
+    int domainnum;
+    char topicobstacles[50];
+    char topictargets[50];
+    int discoveryport;
+    char transmitterip[20];  // either this ip is used (mode 2)
+    char receiverip[20];     // or this ip is used (mode 3)
+} ConfigDDS;
+
+typedef struct {
     Stats stats;
     Physix physix;
+    ConfigDDS configdds;
     int state;
     double score;
     int n_obstacles;

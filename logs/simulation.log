@@ -1,3 +1,7 @@
-[2025-02-06 16:29:04] Blackboard server started...44954
-[2025-02-06 16:29:05] Keyboard process started...
-[2025-02-06 16:29:05] Window process started...
+[2025-02-07 14:58:52] Blackboard server started. PID: 10131
+[2025-02-07 14:58:52] Dynamics started. PID: 10133
+[2025-02-07 14:58:52] Big brother Watchdog process is watching. PID: 10135
+[2025-02-07 14:58:52] Obstacle and Target subscriber started. PID: 10136
+[2025-02-07 14:58:53] Window process started. PID: 10172
+[2025-02-07 14:58:53] Keyboard process started. PID: 10191
+[2025-02-07 14:59:24] Drone got a target at position (7, 18)

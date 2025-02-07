@@ -7,7 +7,9 @@
         "blackboard.h": "c",
         "time.h": "c",
         "unistd.h": "c",
-        "fcntl.h": "c"
+        "fcntl.h": "c",
+        "*.ipp": "c",
+        "system_error": "c"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/g++-11"
 }

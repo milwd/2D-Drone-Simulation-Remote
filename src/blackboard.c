@@ -15,7 +15,7 @@
 #include <cjson/cJSON.h>
 
 
-void read_json(newBlackboard *bb);
+void read_json(newBlackboard *bb, bool first_time);
 double calculate_score(newBlackboard *bb);
 void initialize_logger();
 void cleanup_logger();
@@ -48,10 +48,11 @@ int main() {
         perror("sem_open failed");
         return 1;
     }
-    int fd = open_watchdog_pipe(PIPE_BLACKBOARD);    
-    read_json(bb);
+    int fd = open_watchdog_pipe(PIPE_BLACKBOARD);   
+    read_json(bb, true);
+    printf("read ip %s\n", bb->configdds.receiverip);
+        
     initialize_logger();
-
     logger("Blackboard server started. PID: %d", getpid());
 
     // INITIALIZE THE BLACKBOARD
@@ -67,11 +68,12 @@ int main() {
     bb->max_width   = 20; bb->max_height  = 20; // changes during runtime
     bb->stats.hit_obstacles = 0; bb->stats.hit_targets = 0;
     bb->stats.time_elapsed = 0.0; bb->stats.distance_traveled = 0.0;
+    strncpy(bb->configdds.receiverip, "Q.Q.Q.Q", sizeof(bb->configdds.receiverip) - 1);
     
     while (1) {
         sem_wait(sem);
         bb->score = calculate_score(bb);
-        read_json(bb);
+        read_json(bb, true);
         sem_post(sem);
         send_heartbeat(fd);
         sleep(5);  // freq of 0.2 Hz  
@@ -87,7 +89,7 @@ int main() {
     return 0;
 }
 
-void read_json(newBlackboard *bb) {
+void read_json(newBlackboard *bb, bool first_time) {
     const char *filename = JSON_PATH;
     FILE *file = fopen(filename, "r");
     if (!file) {
@@ -115,6 +117,20 @@ void read_json(newBlackboard *bb) {
     if ((item = cJSON_GetObjectItem(json, "visc_damp_coef")))   bb->physix.visc_damp_coef = item->valueint;
     if ((item = cJSON_GetObjectItem(json, "obst_repl_coef")))   bb->physix.obst_repl_coef = item->valueint;
     if ((item = cJSON_GetObjectItem(json, "radius")))           bb->physix.radius = item->valueint;
+
+    if (first_time){
+        if ((item = cJSON_GetObjectItem(json, "domainnum"))) bb->configdds.domainnum = item->valueint;
+        if ((item = cJSON_GetObjectItem(json, "discoveryport"))) bb->configdds.discoveryport = item->valueint;
+        if ((item = cJSON_GetObjectItem(json, "topicobstacles")) && cJSON_IsString(item))
+            strncpy(bb->configdds.topicobstacles, item->valuestring, sizeof(bb->configdds.topicobstacles) - 1);
+        if ((item = cJSON_GetObjectItem(json, "topictargets")) && cJSON_IsString(item))
+            strncpy(bb->configdds.topictargets, item->valuestring, sizeof(bb->configdds.topictargets) - 1);
+        if ((item = cJSON_GetObjectItem(json, "transmitterip")) && cJSON_IsString(item))
+            strncpy(bb->configdds.transmitterip, item->valuestring, sizeof(bb->configdds.transmitterip) - 1);
+        if ((item = cJSON_GetObjectItem(json, "receiverip")) && cJSON_IsString(item))
+            strncpy(bb->configdds.receiverip, item->valuestring, sizeof(bb->configdds.receiverip) - 1);
+    }
+
     cJSON_Delete(json);
     free(data);
 }
