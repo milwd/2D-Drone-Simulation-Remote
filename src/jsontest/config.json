@@ -1,0 +1,18 @@
+{
+    "num_obstacles": 25,
+    "num_targets": 15,
+
+    "mass": 1,
+    "visc_damp_coef": 1,
+    "obst_repl_coef": 5,
+    "radius": 5,
+    
+    "domainnum": 0,
+    "topicobstacles": "Topic1",
+    "topictargets": "Topic2",
+    "discoveryport": 8888,
+    "transmitterip": "127.0.0.1",
+
+    "receiverip": "127.0.0.1"
+  }
+  
