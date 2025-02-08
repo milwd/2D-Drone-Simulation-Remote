@@ -5,7 +5,7 @@ This project is an interactive drone simulation that operates in a terminal-base
 
 A controllable drone navigating in a bounded area, Randomly appearing and disappearing obstacles and targets, Repulsion forces following Khatib's model, Multiple modes of operation, including local and remote object generation using FastDDS.
 
-![image info](imgs/screencast.png)
+![image info](imgs/screencast.gif)
 
 - **Real-time Drone Control**: Users can move the drone using keyboard input.
 - **Speed Adjustment**: Pressing the same movement key repeatedly increases the drone's speed.
