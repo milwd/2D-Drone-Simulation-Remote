@@ -68,9 +68,10 @@ Where:
 
 ### Khatib's Model for Obstacle Repulsion
 The repulsive force \(F_r\) from an obstacle at distance \(d\) is defined as:
+
 F_rep =
-    η (1/ρ - 1/ρ₀) (1/ρ²) d,  if ρ ≤ ρ₀
-    0,                     if ρ > ρ₀
+-     η (1/ρ - 1/ρ₀) (1/ρ²) d,  if ρ ≤ ρ₀
+-     0,                     if ρ > ρ₀
 
 where:
 - \( \eta \) is the gain factor
