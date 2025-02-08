@@ -51,6 +51,9 @@ int main() {
         }
     } else {
         for (int i = 0; i < processCount; i++) {
+            if (i == 0){
+                sleep(1);  
+            }
             pid_t pid = fork();
             if (pid == 0) {  
                 // Child process
@@ -67,6 +70,8 @@ int main() {
                     snprintf(args, sizeof(args), "args_for_%s", processNames[i]);
                     execArgs[0] = (char*)malloc(strlen(processNames[i]) + 5);
                     sprintf(execArgs[0], "./bins/%s.out", processNames[i]);
+                    if (strcmp(processNames[i], "Blackboard") == 0) {
+                    } 
                 }
 
                 summon(execArgs, (execArgs[0] == "konsole"));

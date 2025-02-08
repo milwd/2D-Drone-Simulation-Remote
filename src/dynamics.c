@@ -91,7 +91,6 @@ int main() {
             bb->stats.distance_traveled += sqrt((x_i - x_i_minus_1) * (x_i - x_i_minus_1) + (y_i - y_i_minus_1) * (y_i - y_i_minus_1));
         }
         sem_post(sem);
-        // printf("time now and before: %ld %ld\n", time(NULL), now);
         if (difftime(time(NULL), now) >= 1){
             send_heartbeat(fd);
             now = time(NULL);

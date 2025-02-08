@@ -38,6 +38,10 @@ pthread_mutex_t logger_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define EPSILON 0.0001      // small value to avoid division by zero
 #define DT  0.001           // time step
 #define MAX_OBJECTS 100     // max number of obstacles and targets
+#define BLACKBOARD_CHECK_DELAY      5  // update blackboard every 1 second
+#define OBSTACLE_GENERATION_DELAY   4  // generate obstacles every 4 seconds
+#define TARGET_GENERATION_DELAY     6  // generate targets every 6 seconds
+#define WATCHDOG_HEARTBEAT_DELAY    1  // check heartbeat every 1 second
 
 
 // SHARED STRUCTURES and DATA STRUCTURES

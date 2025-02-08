@@ -1,9 +1,6 @@
-
 #include "Generated/ObstaclesPubSubTypes.hpp"
-
 #include <chrono>
 #include <thread>
-
 #include <fastdds/dds/domain/DomainParticipant.hpp>
 #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
 #include <fastdds/dds/subscriber/DataReader.hpp>
@@ -26,6 +23,7 @@
 #include <iostream> 
 #include <fcntl.h>
 #include <cjson/cJSON.h>
+
 
 using namespace eprosima::fastdds::dds;
 using namespace eprosima::fastdds::rtps;
@@ -77,8 +75,6 @@ void read_json(ConfigDDS * cd, bool first_time) {
     cJSON_Delete(json);
     free(data);
 }
-
-
 
 void parseIP(const char* ip, int * octets) {
     std::stringstream test(ip);
@@ -377,10 +373,9 @@ int main()
 
     cd = new ConfigDDS(); // Allocate memory for cd
     read_json(cd, true);
-    printf("read ip hereeeeeeeeeee%s\n", cd->receiverip);
 
     logger("Obstacle and Target subscriber started. PID: %d", getpid());
-    printf("receiverid %s\n", cd->receiverip);
+    printf("receiverid %s and transmitterid %s\n", cd->receiverip, cd->transmitterip);
     
     CustomIdlSubscriber* mysub = new CustomIdlSubscriber();
     if (mysub->init(cd)){

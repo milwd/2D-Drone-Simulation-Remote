@@ -1,7 +1,9 @@
-[2025-02-07 14:58:52] Blackboard server started. PID: 10131
-[2025-02-07 14:58:52] Dynamics started. PID: 10133
-[2025-02-07 14:58:52] Big brother Watchdog process is watching. PID: 10135
-[2025-02-07 14:58:52] Obstacle and Target subscriber started. PID: 10136
-[2025-02-07 14:58:53] Window process started. PID: 10172
-[2025-02-07 14:58:53] Keyboard process started. PID: 10191
-[2025-02-07 14:59:24] Drone got a target at position (7, 18)
+[2025-02-08 01:12:28] Dynamics started. PID: 13314
+[2025-02-08 01:12:28] Blackboard server started. PID: 13312
+[2025-02-08 01:12:28] Big brother Watchdog process is watching. PID: 13316
+[2025-02-08 01:12:28] Obstacle process started. PID: 13317
+[2025-02-08 01:12:28] Target process started. PID: 13318
+[2025-02-08 01:12:29] Keyboard process started. PID: 13363
+[2025-02-08 01:12:29] Window process started. PID: 13365
+[2025-02-08 01:13:35] Drone got a target at position (9, 6)
+[2025-02-08 01:14:01] Drone got a target at position (15, 3)

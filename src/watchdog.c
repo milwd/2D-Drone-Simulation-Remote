@@ -69,7 +69,7 @@ int main() {  // watchdog works and receives signals neglecting the state machin
                 exit(EXIT_FAILURE);
             }
         }
-        sleep(1);
+        sleep(WATCHDOG_HEARTBEAT_DELAY);
     }
     for (int i = 0; i < 6; i++) {
         if (components[i].fd > 0) {

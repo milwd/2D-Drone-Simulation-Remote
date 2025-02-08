@@ -49,7 +49,7 @@ int main() {
         }
         sem_post(sem);
         send_heartbeat(fd);
-        sleep(4);
+        sleep(OBSTACLE_GENERATION_DELAY);
     }
 
     if (fd >= 0) { close(fd); }

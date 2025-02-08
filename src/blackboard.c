@@ -50,7 +50,6 @@ int main() {
     }
     int fd = open_watchdog_pipe(PIPE_BLACKBOARD);   
     read_json(bb, true);
-    printf("read ip %s\n", bb->configdds.receiverip);
         
     initialize_logger();
     logger("Blackboard server started. PID: %d", getpid());
@@ -76,7 +75,7 @@ int main() {
         read_json(bb, true);
         sem_post(sem);
         send_heartbeat(fd);
-        sleep(5);  // freq of 0.2 Hz  
+        sleep(BLACKBOARD_CHECK_DELAY);  // freq of 0.2 Hz  
     }
 
     if (fd >= 0) { close(fd); }
@@ -117,7 +116,6 @@ void read_json(newBlackboard *bb, bool first_time) {
     if ((item = cJSON_GetObjectItem(json, "visc_damp_coef")))   bb->physix.visc_damp_coef = item->valueint;
     if ((item = cJSON_GetObjectItem(json, "obst_repl_coef")))   bb->physix.obst_repl_coef = item->valueint;
     if ((item = cJSON_GetObjectItem(json, "radius")))           bb->physix.radius = item->valueint;
-
     if (first_time){
         if ((item = cJSON_GetObjectItem(json, "domainnum"))) bb->configdds.domainnum = item->valueint;
         if ((item = cJSON_GetObjectItem(json, "discoveryport"))) bb->configdds.discoveryport = item->valueint;
@@ -130,7 +128,6 @@ void read_json(newBlackboard *bb, bool first_time) {
         if ((item = cJSON_GetObjectItem(json, "receiverip")) && cJSON_IsString(item))
             strncpy(bb->configdds.receiverip, item->valuestring, sizeof(bb->configdds.receiverip) - 1);
     }
-
     cJSON_Delete(json);
     free(data);
 }
