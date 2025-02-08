@@ -58,9 +58,7 @@ A controllable drone navigating in a bounded area, Randomly appearing and disapp
 ![image info](imgs/forcefield.png)
 The drone operates with two degrees of freedom and follows the equation of motion:
 
-\[
-\sum \mathbf{F} = M \frac{d^2 \mathbf{p}}{dt^2} + K \frac{d \mathbf{p}}{dt}
-\]
+Sum F = M d²p/dt² + K dp/dt
 
 \[ \sum F = M \frac{d^2 p}{dt^2} + K \frac{dp}{dt} \]
 
