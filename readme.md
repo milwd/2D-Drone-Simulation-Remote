@@ -165,7 +165,8 @@ VALGRIND MEMORY LEAK CHECK
 - The drone is lagging in movement -> change mass and coefficients. 
 - The map feature is weird -> I know, right?
 - Is the fastdds section multithreaded? -> it can be ... if you want.
-- Can I test it with my friend's code in their computer? -> Sure, that's why fastdds is used. 
+- Can I test it with my friend's code in their computer? -> Sure, that's why fastdds is used.
+- Thank you for not creating a million ncurses subwindows -> You are welcome.
 
 ---
 *Note: Ensure FastDDS is installed and configured properly for remote modes.*
