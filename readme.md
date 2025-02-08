@@ -58,19 +58,20 @@ A controllable drone navigating in a bounded area, Randomly appearing and disapp
 ![image info](imgs/forcefield.png)
 The drone operates with two degrees of freedom and follows the equation of motion:
 
-Sum F = M d²p/dt² + K dp/dt
-
-\[ \sum F = M \frac{d^2 p}{dt^2} + K \frac{dp}{dt} \]
+F = M d²p/dt² + K dp/dt
 
 Where:
 - **p** = drone position
 - **F** = sum of forces (control, repulsion, attraction)
-- **M** = mass (1.0 Kg)
-- **K** = viscous coefficient (1.0 N·s·m)
+- **M** = mass 
+- **K** = viscous coefficient (N·s·m)
 
 ### Khatib's Model for Obstacle Repulsion
 The repulsive force \(F_r\) from an obstacle at distance \(d\) is defined as:
-\[ F_r = \eta \left( \frac{1}{d} - \frac{1}{d_0} \right) \frac{1}{d^2} \]
+F_rep =
+    η (1/ρ - 1/ρ₀) (1/ρ²) d,  if ρ ≤ ρ₀
+    0,                     if ρ > ρ₀
+
 where:
 - \( \eta \) is the gain factor
 - \( d_0 \) is the influence radius
