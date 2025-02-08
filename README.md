@@ -25,8 +25,7 @@ A controllable drone navigating in a bounded area, Randomly appearing and disapp
 ├── config.json
 ├── master
 ├── bins
-│   ├── ....out
-<!-- │   ├── Blackboard.out
+│   ├── Blackboard.out
 │   ├── Dynamics.out
 │   ├── Keyboard.out
 │   ├── ObjectPub.out
@@ -34,24 +33,14 @@ A controllable drone navigating in a bounded area, Randomly appearing and disapp
 │   ├── Obstacle.out
 │   ├── Target.out
 │   ├── Watchdog.out
-│   ├── Window.out -->
+│   ├── Window.out 
 ├── logs
 │   └── simulation.log
 ├── src
 │   ├── Generated
 │   │   ├── ....hpp
 │   ├── Obstacles.idl
-│   ├── blackboard.c/h
-│   ├── dynamics.c
-│   ├── keyboard.c
-│   ├── logger.c/h
-│   ├── master.c
-│   ├── objectpublisher.cpp
-│   ├── objectsubscriber.cpp
-│   ├── obstacle.c
-│   ├── target.c
-│   ├── watchdog.c
-│   └── windownew.c
+│   ├── ....c/h
 ``` 
 
 ## Simulation Dynamics
