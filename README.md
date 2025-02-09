@@ -5,7 +5,7 @@ This project is an interactive drone simulation that operates in a terminal-base
 
 A controllable drone navigating in a bounded area, Randomly appearing and disappearing obstacles and targets, Repulsion forces following Khatib's model, Multiple modes of operation, including local and remote object generation using FastDDS.
 
-It can be used extensively for **path-planning** of drones with respect to avoidable positions.
+It can be used extensively for **path-planning** of drones with respect to avoidable regions.
 
 ![image info](imgs/screencast.gif)
 
@@ -150,7 +150,7 @@ VALGRIND MEMORY LEAK CHECK
 [2025-02-08 01:14:01] Drone got a target at position (15, 3)
 ```
 
-## Credits
+## Final Notes
 - Developed as the Advanced and Robot Programming assignments, Robotics Engineering, University of Genoa. 
 - Dan Gookins' Guide to Ncurses Programming is a must read.
 - It would have been nice to be a 3D simulation -> probably.
