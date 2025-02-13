@@ -164,6 +164,8 @@ Receives/polls heartbeat notifications from other processes to assess their acti
 
 #### Dynamics
 Uses the user command forces and calculates repulsive/attractive forces to implement robot dynamics. Future drone coordinates will be calculated here and stored in the shared memory struct. Also, position bounds is checked here.
+$$x_i = \frac{2m \cdot x_{i-1} + T_k \cdot x_{i-1} + F_x \cdot T^2 - m \cdot x_{i-2}}{m + T_k}$$
+$$y_i = \frac{2m \cdot y_{i-1} + T_k \cdot y_{i-1} + F_y \cdot T^2 - m \cdot y_{i-2}}{m + T_k}$$
 
 #### Window and Keyboard
 The two konsole processes that use Ncurses to show the environment/map/drone/obstacles and take the possible keys. Possible keys are described in the keyboard (directions, start, exit, map, reset) window and are trivial to use. 
