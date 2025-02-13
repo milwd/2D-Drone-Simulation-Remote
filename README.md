@@ -90,6 +90,7 @@ The `config.json` file includes parameters such as:
 
 ## How to Run
 #### Dependencies
+- `Konsole` for terminal 
 - `Ncurses` for terminal visualization
 - `FastDDS` for remote communication
 - `cJSON`   for reading configurations
