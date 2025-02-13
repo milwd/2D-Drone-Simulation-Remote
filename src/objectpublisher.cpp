@@ -19,10 +19,56 @@
 #include <time.h>
 #include <pthread.h>
 #include "blackboard.h"
+#include <cjson/cJSON.h>
 
 
 using namespace eprosima::fastdds::dds;
 using namespace eprosima::fastdds::rtps;
+
+ConfigDDS * cd;
+
+void read_json(ConfigDDS * cd, bool first_time) {
+    printf("Reading JSON\n");
+    const char *filename = JSON_PATH;
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        perror("Could not open file");
+    }
+    fseek(file, 0, SEEK_END);
+    long length = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    char *data = (char *)malloc(length + 1);
+    if (!data) {
+        perror("Memory allocation failed for JSON config");
+        fclose(file);
+    }
+    fread(data, 1, length, file);
+    data[length] = '\0';
+    fclose(file);
+    cJSON *json = cJSON_Parse(data);
+    if (!json) {
+        printf("Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+    }    
+    printf("parsed some json\n");
+    cJSON *item;  // TODO CHECK FOR NULL and CORRUPTED JSON
+    if (first_time) {
+        if ((item = cJSON_GetObjectItem(json, "domainnum")) && cJSON_IsNumber(item))
+            cd->domainnum = item->valueint;
+        if ((item = cJSON_GetObjectItem(json, "discoveryport")) && cJSON_IsNumber(item))
+            cd->discoveryport = item->valueint;
+        if ((item = cJSON_GetObjectItem(json, "topicobstacles")) && cJSON_IsString(item))
+            strncpy(cd->topicobstacles, item->valuestring, sizeof(cd->topicobstacles) - 1);
+        if ((item = cJSON_GetObjectItem(json, "topictargets")) && cJSON_IsString(item))
+            strncpy(cd->topictargets, item->valuestring, sizeof(cd->topictargets) - 1);
+        if ((item = cJSON_GetObjectItem(json, "transmitterip")) && cJSON_IsString(item))
+            strncpy(cd->transmitterip, item->valuestring, sizeof(cd->transmitterip) - 1);
+        if ((item = cJSON_GetObjectItem(json, "receiverip")) && cJSON_IsString(item))
+            strncpy(cd->receiverip, item->valuestring, sizeof(cd->receiverip) - 1);
+    }
+
+    cJSON_Delete(json);
+    free(data);
+}
 
 class CustomIdlPublisher
 {
@@ -268,12 +314,16 @@ int main()
     printf("Starting publisher.\n");
     logger("Starting publisher... NOW");
 
+    cd = new ConfigDDS(); // Allocate memory for cd
+    read_json(cd, true);
+
     CustomIdlPublisher* mypub = new CustomIdlPublisher();
     if(mypub->init())
     {
         mypub->run();
     }
 
+    delete cd;
     delete mypub;
     return 0;
 }

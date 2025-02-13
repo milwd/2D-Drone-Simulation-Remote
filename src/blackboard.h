@@ -24,7 +24,7 @@ extern pthread_mutex_t logger_mutex;
 static FILE *log_file = NULL;
 pthread_mutex_t logger_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-#define NUMBER_OF_PROCESSES 7
+#define NUMBER_OF_PROCESSES 6
 #define MAX_MSG_LENGTH 256
 
 // SIMULATION HYPERPARAMETERS

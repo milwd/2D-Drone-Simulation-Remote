@@ -57,8 +57,7 @@ int main(int argc, char *argv[]) {
     time_t now = time(NULL);
     while (1){  // TODO FIND OUT WHY VISUALIZATION CLEARS WHEN RENDER-GAME
         sem_wait(sem);
-        bb->max_height  = LINES;
-        bb->max_width   = COLS;
+        getmaxyx(stdscr, bb->max_height, bb->max_width);
         if (bb->state == 0){
             render_loading(stdscr);
             werase(win2);
