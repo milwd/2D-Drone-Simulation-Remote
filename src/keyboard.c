@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
         }
         update_forces(ch, &Fx, &Fy, bb);
         sem_post(sem);
-        if (difftime(time(NULL), now) >= 1){
+        if (difftime(time(NULL), now) >= 3){
             send_heartbeat(fd);
             now = time(NULL);
         }
@@ -121,6 +121,7 @@ int main(int argc, char *argv[]) {
     endwin();
     sem_close(sem);
     munmap(bb, sizeof(newBlackboard));
+    kill(getppid(), SIGTERM);
 
     return 0;
 }

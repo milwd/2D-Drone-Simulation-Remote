@@ -126,10 +126,12 @@ private:
             if (info.current_count_change == 1)
             {
                 std::cout << "Subscriber matched." << std::endl;
+                logger("Subscriber matched.");
             }
             else if (info.current_count_change == -1)
             {
                 std::cout << "Subscriber unmatched." << std::endl;
+                logger("Subscriber unmatched.");
             }
             else
             {
@@ -144,7 +146,8 @@ private:
             SampleInfo info;
             if (reader->take_next_sample(&my_obstacles, &info) == eprosima::fastdds::dds::RETCODE_OK)
             {
-                std::cout << "Data available. Waiting for data..." << std::endl;
+                std::cout << "Data available. Receiving data..." << std::endl;
+                logger("Data available. Receiving data...");
                 if (info.valid_data)
                 {
                     sem_wait(sem);
@@ -184,10 +187,12 @@ private:
             if (info.current_count_change == 1)
             {
                 std::cout << "Subscriber matched." << std::endl;
+                logger("Subscriber matched.");
             }
             else if (info.current_count_change == -1)
             {
                 std::cout << "Subscriber unmatched." << std::endl;
+                logger("Subscriber unmatched.");
             }
             else
             {
@@ -202,7 +207,8 @@ private:
             SampleInfo info;
             if (reader->take_next_sample(&my_targets, &info) == eprosima::fastdds::dds::RETCODE_OK)
             {
-                std::cout << "Data Target available. Waiting for data..." << std::endl;
+                // std::cout << "Data Target available. Receiving data ..." << std::endl;
+                logger("Data Target available. Receiving data ...");
                 if (info.valid_data)
                 {
                     sem_wait(sem);

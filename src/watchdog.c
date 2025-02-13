@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <string.h>
+#include <signal.h>
 #include "blackboard.h"
 
 
@@ -47,7 +48,7 @@ int main() {  // watchdog works and receives signals neglecting the state machin
         timeout.tv_sec = 1;
         timeout.tv_usec = 0;
         if (select(max_fd + 1, &readfds, NULL, NULL, &timeout) < 0) {
-            perror("select failed");
+            perror("watchdog select failed");
             break;
         }
         for (int i = 0; i < 6; i++) {
@@ -56,16 +57,18 @@ int main() {  // watchdog works and receives signals neglecting the state machin
                 char buffer[16];
                 while ((len = read(components[i].fd, buffer, sizeof(buffer) - 1)) > 0) {
                     components[i].last_heartbeat = now;  // Update timestamp only with the latest read
-                    printf("Watchdog received: %s from %s\n", buffer, components[i].pipe_name);
+                    logger("Watchdog received: %s from %s", buffer, components[i].pipe_name);
                 }
             }
             if (difftime(now, components[i].last_heartbeat) > TIMEOUT_SECONDS) {
                 fprintf(stderr, "Watchdog ALERT: No heartbeat from %s!\n", components[i].pipe_name);
+                logger("Watchdog ALERT: No heartbeat from %s!\n", components[i].pipe_name);
                 for (int i = 0; i < 6; i++) {
                     if (components[i].fd > 0) {
                         close(components[i].fd);
                     }
                 }
+                kill(getppid(), SIGTERM);
                 exit(EXIT_FAILURE);
             }
         }

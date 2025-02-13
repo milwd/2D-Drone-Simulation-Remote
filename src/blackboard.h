@@ -41,15 +41,15 @@ pthread_mutex_t logger_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define BLACKBOARD_CHECK_DELAY      5  // update blackboard every 1 second
 #define OBSTACLE_GENERATION_DELAY   4  // generate obstacles every 4 seconds
 #define TARGET_GENERATION_DELAY     6  // generate targets every 6 seconds
-#define WATCHDOG_HEARTBEAT_DELAY    1  // check heartbeat every 1 second
+#define WATCHDOG_HEARTBEAT_DELAY    2  // check heartbeat every 1 second
 
 
-// SHARED STRUCTURES and DATA STRUCTURES
+// SHARED STRUCTURES and DATA STRUCTURES (with proper order w.r.t padding and memory alignment)
 typedef struct {
-    int hit_obstacles;
-    int hit_targets;
     double time_elapsed;
     double distance_traveled;
+    int hit_obstacles;
+    int hit_targets;
 } Stats;
 
 typedef struct {
@@ -61,30 +61,30 @@ typedef struct {
 
 typedef struct {
     int domainnum;
+    int discoveryport;
     char topicobstacles[50];
     char topictargets[50];
-    int discoveryport;
-    char transmitterip[20];  // either this ip is used (mode 2)
-    char receiverip[20];     // or this ip is used (mode 3)
+    char transmitterip[20];  
+    char receiverip[20];     
 } ConfigDDS;
 
 typedef struct {
     Stats stats;
     Physix physix;
-    ConfigDDS configdds;
-    int state;
     double score;
+    int state;
     int n_obstacles;
     int n_targets;
     int drone_x, drone_y; 
     int command_force_x, command_force_y;
+    int max_height;
+    int max_width;
     int obstacle_xs[MAX_OBJECTS];
     int obstacle_ys[MAX_OBJECTS];
     int target_xs[MAX_OBJECTS];
     int target_ys[MAX_OBJECTS];
-    int max_height;
-    int max_width;
 } newBlackboard;
+
 
 // COMMON FUNCTIONS
 static inline void logger(const char *format, ...) {

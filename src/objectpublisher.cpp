@@ -320,13 +320,13 @@ public:
         {
             if (listener_obstacle.matched_>0){  // obstacle topic
                 written = publish_obstacles(obs_x, obs_y, writer_obstacle, my_obstacles);
-                std::cout << "Message: " << written <<"targets generated and SENT!" << std::endl;
+                logger("Message: %d obstacles generated and SENT!", written);
             }
             if (listener_target.matched_>0){    // target topic
                 written = publish_targets(tar_x, tar_y, writer_target, my_targets);
-                std::cout << "Message: " << written <<"targets generated and SENT!" << std::endl;
+                logger("Message: %d targets generated and SENT!", written);
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(5000)); 
+            std::this_thread::sleep_for(std::chrono::milliseconds(10000)); 
         }
     }
 };

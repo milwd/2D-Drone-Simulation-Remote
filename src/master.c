@@ -26,97 +26,18 @@
 
 
 void summon(char *args[], int useTerminal);
+double calculate_score(newBlackboard *bb);
+void initialize_logger();
+void cleanup_logger();
+void read_json(newBlackboard *bb, bool first_time);
+void create_named_pipe(const char *pipe_name);
+void handle_sigchld(int sig);
 
-void read_json(newBlackboard *bb, bool first_time) {
-    const char *filename = JSON_PATH;
-    FILE *file = fopen(filename, "r");
-    if (!file) {
-        perror("Could not open file");
-    }
-    fseek(file, 0, SEEK_END);
-    long length = ftell(file);
-    fseek(file, 0, SEEK_SET);
-    char *data = (char *)malloc(length + 1);
-    if (!data) {
-        perror("Memory allocation failed for JSON config");
-        fclose(file);
-    }
-    fread(data, 1, length, file);
-    data[length] = '\0';
-    fclose(file);
-    cJSON *json = cJSON_Parse(data);
-    if (!json) {
-        printf("Error parsing JSON: %s\n", cJSON_GetErrorPtr());
-    }    
-    cJSON *item;  // TODO CHECK FOR NULL and CORRUPTED JSON
-    if ((item = cJSON_GetObjectItem(json, "num_obstacles")))    bb->n_obstacles = item->valueint;
-    if ((item = cJSON_GetObjectItem(json, "num_targets")))      bb->n_targets = item->valueint;
-    if ((item = cJSON_GetObjectItem(json, "mass")))             bb->physix.mass = item->valueint;
-    if ((item = cJSON_GetObjectItem(json, "visc_damp_coef")))   bb->physix.visc_damp_coef = item->valueint;
-    if ((item = cJSON_GetObjectItem(json, "obst_repl_coef")))   bb->physix.obst_repl_coef = item->valueint;
-    if ((item = cJSON_GetObjectItem(json, "radius")))           bb->physix.radius = item->valueint;
-    if (first_time){
-        if ((item = cJSON_GetObjectItem(json, "domainnum"))) bb->configdds.domainnum = item->valueint;
-        if ((item = cJSON_GetObjectItem(json, "discoveryport"))) bb->configdds.discoveryport = item->valueint;
-        if ((item = cJSON_GetObjectItem(json, "topicobstacles")) && cJSON_IsString(item))
-            strncpy(bb->configdds.topicobstacles, item->valuestring, sizeof(bb->configdds.topicobstacles) - 1);
-        if ((item = cJSON_GetObjectItem(json, "topictargets")) && cJSON_IsString(item))
-            strncpy(bb->configdds.topictargets, item->valuestring, sizeof(bb->configdds.topictargets) - 1);
-        if ((item = cJSON_GetObjectItem(json, "transmitterip")) && cJSON_IsString(item))
-            strncpy(bb->configdds.transmitterip, item->valuestring, sizeof(bb->configdds.transmitterip) - 1);
-        if ((item = cJSON_GetObjectItem(json, "receiverip")) && cJSON_IsString(item))
-            strncpy(bb->configdds.receiverip, item->valuestring, sizeof(bb->configdds.receiverip) - 1);
-    }
-    cJSON_Delete(json);
-    free(data);
-}
-
-double calculate_score(newBlackboard *bb) {
-    double score = (double)bb->stats.hit_targets        * 30.0 - 
-                   (double)bb->stats.hit_obstacles      * 5.0 - 
-                   bb->stats.time_elapsed               * 0.05 - 
-                   bb->stats.distance_traveled          * 0.1;
-    return score;
-}
-
-void initialize_logger() {
-    if (access("./logs/simulation.log", F_OK) == 0) {
-        if (unlink("./logs/simulation.log") == 0) {
-            printf("Existing simulation.log file deleted successfully.\n");
-        } else {
-            perror("Failed to delete simulation.log");
-        }
-    } else {
-        printf("No existing simulation.log file found.\n");
-    }
-    if (!log_file) {
-        log_file = fopen("./logs/simulation.log", "a");
-        if (!log_file) {
-            perror("Unable to open log file");
-            return;
-        }
-    }
-}
-
-void cleanup_logger() {
-    pthread_mutex_lock(&logger_mutex);
-    if (log_file) {
-        fclose(log_file);
-        log_file = NULL;
-    }
-    pthread_mutex_unlock(&logger_mutex);
-}
-
-void create_named_pipe(const char *pipe_name) {
-    if (access(pipe_name, F_OK) == -1) {
-        if (mkfifo(pipe_name, 0666) == -1) {
-            perror("Failed to create named pipe");
-            exit(EXIT_FAILURE);
-        }
-    }
-}
+bool terminated = false;
 
 int main() {
+    signal(SIGCHLD, handle_sigchld);  
+
     create_named_pipe(PIPE_BLACKBOARD);
     create_named_pipe(PIPE_DYNAMICS);
     create_named_pipe(PIPE_KEYBOARD);
@@ -166,14 +87,20 @@ int main() {
     read_json(bb, true);
 
     int mode;
-    printf("\n=== === === ===\n\nWELCOME TO DRONE SIMULATION.\n\nChoose mode of operation ...\n"
-           "(1): Local object generation and simulation\n"
-           "(2): Remote object generation and simulation\n"
-           "Enter mode: ");
-    
-    if (scanf("%d", &mode) != 1) {
-        fprintf(stderr, "Invalid input. Exiting.\n");
-        return EXIT_FAILURE;
+    while (1) {
+        printf("\n=== === === ===\n\nWELCOME TO DRONE SIMULATION.\n\nChoose mode of operation ...\n"
+            "(1): Local object generation and simulation\n"
+            "(2): Remote object generation and simulation\n"
+            "Enter mode: ");
+        if (scanf("%d", &mode) != 1) {
+            fprintf(stderr, "Invalid input. Please enter a number (1 or 2).\n");
+            while (getchar() != '\n'); // Clear input buffer
+            continue;
+        }
+        if (mode == 1 || mode == 2) {
+            break;
+        }
+        fprintf(stderr, "Invalid choice. Please enter 1 or 2.\n");
     }
     printf("\n=== === === ===\n\n");
 
@@ -226,6 +153,10 @@ int main() {
     }
 
     while (1) {
+        if (terminated) {
+            break;
+        }
+        printf("temrinated: %d\n", terminated);
         sem_wait(sem);
         bb->score = calculate_score(bb);
         read_json(bb, true);
@@ -250,14 +181,13 @@ int main() {
             kill(allPIDs[i], SIGTERM);
         }
     }
-    if (fd >= 0) { close(fd); }
+    if (fd >= 0) { close(fd); }  // close pipe
     cleanup_logger();
     sem_close(sem);
     sem_unlink(SEM_NAME);
     munmap(bb, sizeof(newBlackboard));
     shm_unlink(SHM_NAME);
 
-    // Wait for all processes to finish
     while (wait(NULL) > 0);
 
     printf("All processes terminated. Exiting master process.\n");
@@ -269,4 +199,86 @@ void summon(char *args[], int useTerminal) {
         perror("execvp failed");
         exit(EXIT_FAILURE);
     }
+}
+
+void read_json(newBlackboard *bb, bool first_time) {
+    const char *filename = JSON_PATH;
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        perror("Could not open file");
+    }
+    fseek(file, 0, SEEK_END);
+    long length = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    char *data = (char *)malloc(length + 1);
+    if (!data) {
+        perror("Memory allocation failed for JSON config");
+        fclose(file);
+    }
+    fread(data, 1, length, file);
+    data[length] = '\0';
+    fclose(file);
+    cJSON *json = cJSON_Parse(data);
+    if (!json) {
+        printf("Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+    }    
+    cJSON *item;  // TODO CHECK FOR NULL and CORRUPTED JSON
+    if ((item = cJSON_GetObjectItem(json, "num_obstacles")))    bb->n_obstacles = item->valueint;
+    if ((item = cJSON_GetObjectItem(json, "num_targets")))      bb->n_targets = item->valueint;
+    if ((item = cJSON_GetObjectItem(json, "mass")))             bb->physix.mass = item->valueint;
+    if ((item = cJSON_GetObjectItem(json, "visc_damp_coef")))   bb->physix.visc_damp_coef = item->valueint;
+    if ((item = cJSON_GetObjectItem(json, "obst_repl_coef")))   bb->physix.obst_repl_coef = item->valueint;
+    if ((item = cJSON_GetObjectItem(json, "radius")))           bb->physix.radius = item->valueint;
+    cJSON_Delete(json);
+    free(data);
+}
+
+
+double calculate_score(newBlackboard *bb) {
+    double score = (double)bb->stats.hit_targets        * 30.0 - 
+                   (double)bb->stats.hit_obstacles      * 5.0 - 
+                   bb->stats.time_elapsed               * 0.05 - 
+                   bb->stats.distance_traveled          * 0.1;
+    return score;
+}
+
+void initialize_logger() {
+    if (access("./logs/simulation.log", F_OK) == 0) {
+        if (unlink("./logs/simulation.log") == 0) {
+            printf("Existing simulation.log file deleted successfully.\n");
+        } else {
+            perror("Failed to delete simulation.log");
+        }
+    } else {
+        printf("No existing simulation.log file found.\n");
+    }
+    if (!log_file) {
+        log_file = fopen("./logs/simulation.log", "a");
+        if (!log_file) {
+            perror("Unable to open log file");
+            return;
+        }
+    }
+}
+
+void cleanup_logger() {
+    pthread_mutex_lock(&logger_mutex);
+    if (log_file) {
+        fclose(log_file);
+        log_file = NULL;
+    }
+    pthread_mutex_unlock(&logger_mutex);
+}
+
+void create_named_pipe(const char *pipe_name) {
+    if (access(pipe_name, F_OK) == -1) {
+        if (mkfifo(pipe_name, 0666) == -1) {
+            perror("Failed to create named pipe");
+            exit(EXIT_FAILURE);
+        }
+    }
+}
+
+void handle_sigchld(int sig) {
+    terminated = true;
 }

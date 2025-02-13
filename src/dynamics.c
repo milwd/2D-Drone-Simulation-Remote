@@ -91,7 +91,7 @@ int main() {
             bb->stats.distance_traveled += sqrt((x_i - x_i_minus_1) * (x_i - x_i_minus_1) + (y_i - y_i_minus_1) * (y_i - y_i_minus_1));
         }
         sem_post(sem);
-        if (difftime(time(NULL), now) >= 1){
+        if (difftime(time(NULL), now) >= 3){
             send_heartbeat(fd);
             now = time(NULL);
         }

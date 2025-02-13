@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
             render_visualization(win2, bb);
         }
         sem_post(sem);
-        if (difftime(time(NULL), now) >= 1){
+        if (difftime(time(NULL), now) >= 3){
             send_heartbeat(fd);
             now = time(NULL);
         }
