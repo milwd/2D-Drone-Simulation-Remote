@@ -1,6 +1,5 @@
 #include "Generated/ObstaclesPubSubTypes.hpp"
-#include <chrono>
-#include <thread>
+#include "Generated/TargetsPubSubTypes.hpp"
 #include <fastdds/dds/domain/DomainParticipant.hpp>
 #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
 #include <fastdds/dds/subscriber/DataReader.hpp>
@@ -10,6 +9,8 @@
 #include <fastdds/dds/subscriber/Subscriber.hpp>
 #include <fastdds/dds/topic/TypeSupport.hpp>
 #include <fastdds/rtps/transport/TCPv4TransportDescriptor.hpp>
+#include <chrono>
+#include <thread>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ipc.h>
@@ -207,8 +208,8 @@ private:
                     sem_wait(sem);
                     for (int i=0; i<MAX_OBJECTS; i++){ 
                         if (i < bb->n_targets){
-                            bb->target_xs[i] = my_targets.obstacles_x().at(i);
-                            bb->target_ys[i] = my_targets.obstacles_y().at(i);
+                            bb->target_xs[i] = my_targets.targets_x().at(i);
+                            bb->target_ys[i] = my_targets.targets_y().at(i);
                         } else {
                             bb->target_xs[i] = -1;
                             bb->target_ys[i] = -1;
@@ -218,7 +219,7 @@ private:
                 }
             }
         }
-        Obstacles my_targets;
+        Targets my_targets;
         std::atomic_int samples_;
     } listener_target;
 

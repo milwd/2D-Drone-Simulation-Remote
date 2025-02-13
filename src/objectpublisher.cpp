@@ -1,4 +1,5 @@
 #include "Generated/ObstaclesPubSubTypes.hpp"
+#include "Generated/TargetsPubSubTypes.hpp"
 #include <chrono>
 #include <thread>
 #include <fastdds/dds/domain/DomainParticipant.hpp>
@@ -75,7 +76,7 @@ class CustomIdlPublisher
 private:
 
     Obstacles my_obstacles;
-    Obstacles my_targets;
+    Targets   my_targets;
 
     DomainParticipant* participant_;
 
@@ -227,7 +228,7 @@ public:
 
         participantQos.wire_protocol().builtin.metatrafficUnicastLocatorList.push_back(locator);
 
-        participant_ = DomainParticipantFactory::get_instance()->create_participant(0, participantQos);
+        participant_ = DomainParticipantFactory::get_instance()->create_participant(cd->domainnum, participantQos);
         if (participant_ == nullptr)
         {
             std::cerr << "Failed to create DomainParticipant" << std::endl;
@@ -242,7 +243,7 @@ public:
         }
 
         // Obstacles
-        topic_obstacle = participant_->create_topic("Topic1", type_.get_type_name(), TOPIC_QOS_DEFAULT);
+        topic_obstacle = participant_->create_topic(cd->topicobstacles, type_.get_type_name(), TOPIC_QOS_DEFAULT);
         if (topic_obstacle == nullptr)
         {
             return false;
@@ -253,7 +254,7 @@ public:
             return false;
         }
         // Targets
-        topic_target = participant_->create_topic("Topic2", type_.get_type_name(), TOPIC_QOS_DEFAULT);
+        topic_target = participant_->create_topic(cd->topictargets, type_.get_type_name(), TOPIC_QOS_DEFAULT);
         if (topic_target == nullptr)
         {
             return false;
@@ -267,7 +268,7 @@ public:
         return true;
     }   
 
-    int publish(int * obj_x, int * obj_y, DataWriter* writer, Obstacles my_pubsublist)
+    int publish_obstacles(int * obj_x, int * obj_y, DataWriter* writer, Obstacles my_pubsublist)
     {
         for (int i=0; i<MAX_OBJECTS; i++){ 
             int gen_x = rand() % (WIN_SIZE_X-1);
@@ -288,6 +289,27 @@ public:
         return my_pubsublist.obstacles_number();
     }
 
+    int publish_targets(int * obj_x, int * obj_y, DataWriter* writer, Targets my_pubsublist)
+    {
+        for (int i=0; i<MAX_OBJECTS; i++){ 
+            int gen_x = rand() % (WIN_SIZE_X-1);
+            int gen_y = rand() % (WIN_SIZE_Y-1);
+            while (gen_x <= 0 && gen_y <= 0){
+                gen_x = rand() % (WIN_SIZE_X-1);
+                gen_y = rand() % (WIN_SIZE_Y-1);
+            }
+            obj_x[i] = gen_x;
+            obj_y[i] = gen_y;
+        }
+        std::vector<int32_t> obstacles_x(obj_x, obj_x + MAX_OBJECTS);
+        std::vector<int32_t> obstacles_y(obj_y, obj_y + MAX_OBJECTS);
+        my_pubsublist.targets_number(MAX_OBJECTS);
+        my_pubsublist.targets_x(obstacles_x);
+        my_pubsublist.targets_y(obstacles_y);
+        writer->write(&my_pubsublist);
+        return my_pubsublist.targets_number();
+    }
+
     void run()
     {
         int obs_x[MAX_OBJECTS], obs_y[MAX_OBJECTS];
@@ -297,11 +319,11 @@ public:
         while (true)                                   // IDEALLY, THESE TWO WOULD BE IN SEPARATE CONCURRENT THREADS
         {
             if (listener_obstacle.matched_>0){  // obstacle topic
-                written = publish(obs_x, obs_y, writer_obstacle, my_obstacles);
+                written = publish_obstacles(obs_x, obs_y, writer_obstacle, my_obstacles);
                 std::cout << "Message: " << written <<"targets generated and SENT!" << std::endl;
             }
             if (listener_target.matched_>0){    // target topic
-                written = publish(tar_x, tar_y, writer_target, my_targets);
+                written = publish_targets(tar_x, tar_y, writer_target, my_targets);
                 std::cout << "Message: " << written <<"targets generated and SENT!" << std::endl;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(5000)); 
