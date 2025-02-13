@@ -169,7 +169,6 @@ int main() {
     printf("\n=== === === ===\n\nWELCOME TO DRONE SIMULATION.\n\nChoose mode of operation ...\n"
            "(1): Local object generation and simulation\n"
            "(2): Remote object generation and simulation\n"
-           "(3): Object generation and publish over network\n"
            "Enter mode: ");
     
     if (scanf("%d", &mode) != 1) {
@@ -189,55 +188,40 @@ int main() {
         memcpy(processNames, temp, sizeof(temp));
     }
     
-    if (mode == 3) {  
-        // Mode 3: Object Publisher
+    for (int i = 0; i < processCount; i++) {
+        if (i == 0){
+            sleep(1);  
+        }
         pid_t pid = fork();
         if (pid == 0) {  
             // Child process
-            char *args[] = {"./bins/ObjectPub.out", "args_for_object", NULL};
-            summon(args, 0);
+            char args[256];
+            snprintf(args, sizeof(args), "args_for_%s", processNames[i]);
+            
+            char *execArgs[] = {NULL, args, NULL};
+            if (strcmp(processNames[i], "Window") == 0 || strcmp(processNames[i], "Keyboard") == 0) {
+                execArgs[0] = "konsole"; 
+                execArgs[1] = "-e";
+                execArgs[2] = (strcmp(processNames[i], "Window") == 0) ? "./bins/Window.out" : "./bins/Keyboard.out";
+                execArgs[3] = NULL;
+            } else {
+                snprintf(args, sizeof(args), "args_for_%s", processNames[i]);
+                execArgs[0] = (char*)malloc(strlen(processNames[i]) + 5);
+                sprintf(execArgs[0], "./bins/%s.out", processNames[i]);
+                if (strcmp(processNames[i], "Blackboard") == 0) {
+                } 
+            }
+
+            summon(execArgs, (execArgs[0] == "konsole"));
+
+            free(execArgs[0]);  
+            exit(EXIT_FAILURE); 
         } else if (pid < 0) {
             perror("fork failed");
             return EXIT_FAILURE;
         } else {
-            printf("Launched Object Publisher, PID: %d\n", pid); 
-        }
-    } else {
-        for (int i = 0; i < processCount; i++) {
-            if (i == 0){
-                sleep(1);  
-            }
-            pid_t pid = fork();
-            if (pid == 0) {  
-                // Child process
-                char args[256];
-                snprintf(args, sizeof(args), "args_for_%s", processNames[i]);
-                
-                char *execArgs[] = {NULL, args, NULL};
-                if (strcmp(processNames[i], "Window") == 0 || strcmp(processNames[i], "Keyboard") == 0) {
-                    execArgs[0] = "konsole"; 
-                    execArgs[1] = "-e";
-                    execArgs[2] = (strcmp(processNames[i], "Window") == 0) ? "./bins/Window.out" : "./bins/Keyboard.out";
-                    execArgs[3] = NULL;
-                } else {
-                    snprintf(args, sizeof(args), "args_for_%s", processNames[i]);
-                    execArgs[0] = (char*)malloc(strlen(processNames[i]) + 5);
-                    sprintf(execArgs[0], "./bins/%s.out", processNames[i]);
-                    if (strcmp(processNames[i], "Blackboard") == 0) {
-                    } 
-                }
-
-                summon(execArgs, (execArgs[0] == "konsole"));
-
-                free(execArgs[0]);  
-                exit(EXIT_FAILURE); 
-            } else if (pid < 0) {
-                perror("fork failed");
-                return EXIT_FAILURE;
-            } else {
-                allPIDs[i] = pid;
-                printf("Launched %s, PID: %d\n", processNames[i], pid);  // TODO DELETE LATER
-            }
+            allPIDs[i] = pid;
+            printf("Launched %s, PID: %d\n", processNames[i], pid);  // TODO DELETE LATER
         }
     }
 

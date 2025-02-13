@@ -1,7 +1,6 @@
-[2025-02-13 16:18:28] Blackboard server started. PID: 10675
-[2025-02-13 16:18:30] Big brother Watchdog process is watching. PID: 10679
-[2025-02-13 16:18:30] Dynamics started. PID: 10677
-[2025-02-13 16:18:30] Obstacle and Target subscriber started. PID: 10680
-[2025-02-13 16:18:30] Window process started. PID: 10715
-[2025-02-13 16:18:30] Keyboard process started. PID: 10734
-[2025-02-13 16:18:39] Starting publisher... NOW
+[2025-02-13 18:35:02] Blackboard server started. PID: 16969
+[2025-02-13 18:35:04] Big brother Watchdog process is watching. PID: 16973
+[2025-02-13 18:35:04] Dynamics started. PID: 16971
+[2025-02-13 18:35:04] Obstacle and Target subscriber started. PID: 16974
+[2025-02-13 18:35:04] Keyboard process started. PID: 17009
+[2025-02-13 18:35:04] Window process started. PID: 17028
