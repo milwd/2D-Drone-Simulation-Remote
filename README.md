@@ -97,6 +97,7 @@ The `config.json` file includes parameters such as:
 
 #### Procedure
 Clone the project: `git clone https://github.com/milwd/2D-Drone-Simulation-Remote.git`
+
 0. You can generate new datatype libraries (with e.g. `fastddsgen target.idl -d src/generated/`), but it has been done already.
 1. Compile the project:
    ```bash
