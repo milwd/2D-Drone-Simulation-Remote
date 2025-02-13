@@ -156,7 +156,6 @@ int main() {
         if (terminated) {
             break;
         }
-        printf("temrinated: %d\n", terminated);
         sem_wait(sem);
         bb->score = calculate_score(bb);
         read_json(bb, true);

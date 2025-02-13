@@ -12,15 +12,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/mman.h>
 #include <fcntl.h>
-#include <semaphore.h>
 #include <unistd.h>
 #include <time.h>
-#include <pthread.h>
-#include "blackboard.h"
 #include <cjson/cJSON.h>
+#include "blackboard.h"
 
 
 using namespace eprosima::fastdds::dds;

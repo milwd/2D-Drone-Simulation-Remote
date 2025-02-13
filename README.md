@@ -163,7 +163,7 @@ Important checkpoints in the execution of the process will be noted in the simul
 Forks and executes other processes. Initializes shared memory, pipes, etc. Also, regularly checks for updates in the config file and stores updated values in the shared memory struct; So simulation changes in the config file will have effects in the execution.
 
 #### Watchdog
-Receives/polls heartbeat notifications from other processes to assess their activity. The communication is done via pipes. 
+Receives/polls heartbeat notifications from other processes to assess their activity. The communication is done via pipes. If any process doesn't send heartbeats in `watchdog_timeout_time` (defined in macro blackboard.h), it signals the master to kill all. Important stuff are logged to simulation log.
 
 #### Dynamics
 Uses the user command forces and calculates repulsive/attractive forces to implement robot dynamics. Future drone coordinates will be calculated here and stored in the shared memory struct. Also, position bounds is checked here.
