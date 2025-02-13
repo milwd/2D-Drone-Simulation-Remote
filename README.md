@@ -116,11 +116,16 @@ The `config.json` file includes parameters such as:
    ```bash
    ./compile.sh
    ```
-2. Run the simulation:
+2. Configure the parameters in config.json: Parameters for network and simulation.
+3. Run the simulation:
    ```bash
    ./master
    ```
-3. Follow on-screen instructions to select the mode.
+4. Follow on-screen instructions to select the mode. 1 for local and 2 for remote. 
+5. If you want to generate obstacles/targets, just run the publish process:
+   ```bash
+   ./ObjectPub.out
+   ```
 
 ## Dependencies
 - `ncurses` for terminal visualization
