@@ -216,7 +216,7 @@ public:
         participantQos.wire_protocol().builtin.discovery_config.discoveryProtocol = DiscoveryProtocol::SERVER;
 
         auto tcp_transport = std::make_shared<TCPv4TransportDescriptor>();
-        tcp_transport->set_WAN_address("127.0.0.1");  
+        tcp_transport->set_WAN_address(cd->transmitterip);  
         tcp_transport->add_listener_port(8888);  // Listening port for discovery
         participantQos.transport().use_builtin_transports = false;
         participantQos.transport().user_transports.push_back(tcp_transport);

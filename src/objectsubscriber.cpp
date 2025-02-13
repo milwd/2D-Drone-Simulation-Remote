@@ -268,13 +268,13 @@ public:
         participantQos.wire_protocol().builtin.discovery_config.discoveryProtocol = DiscoveryProtocol::CLIENT;
 
         auto tcp_transport = std::make_shared<TCPv4TransportDescriptor>();
-        tcp_transport->set_WAN_address(cd->transmitterip);
+        tcp_transport->set_WAN_address(cd->receiverip);
         tcp_transport->add_listener_port(8800);
         participantQos.transport().use_builtin_transports = false;
         participantQos.transport().user_transports.push_back(tcp_transport);
 
         int server_ip [4];
-        parseIP(cd->receiverip, &server_ip[0]);
+        parseIP(cd->transmitterip, &server_ip[0]);
         Locator_t server_locator;
         server_locator.kind = LOCATOR_KIND_TCPv4;
         server_locator.port = cd->discoveryport;
@@ -283,7 +283,7 @@ public:
         participantQos.wire_protocol().builtin.discovery_config.m_DiscoveryServers.push_back(server_locator);
 
         int client_ip [4];
-        parseIP(cd->transmitterip, &client_ip[0]);
+        parseIP(cd->receiverip, &client_ip[0]);
         Locator_t client_locator;
         client_locator.kind = LOCATOR_KIND_TCPv4;
         client_locator.port = 8800;
