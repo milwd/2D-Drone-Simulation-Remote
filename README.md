@@ -96,9 +96,11 @@ The `config.json` file includes parameters such as:
 - `cJSON`   for reading configurations
 
 #### Procedure
+Clone the project: `git clone https://github.com/milwd/2D-Drone-Simulation-Remote.git`
 0. You can generate new datatype libraries (with e.g. `fastddsgen target.idl -d src/generated/`), but it has been done already.
 1. Compile the project:
    ```bash
+   chmod +x compile.sh
    ./compile.sh
    ```
 2. Configure the parameters in config.json: Parameters for network (domain, topics, IPs) and simulation (physics).
@@ -164,6 +166,7 @@ Receives/polls heartbeat notifications from other processes to assess their acti
 
 #### Dynamics
 Uses the user command forces and calculates repulsive/attractive forces to implement robot dynamics. Future drone coordinates will be calculated here and stored in the shared memory struct. Also, position bounds is checked here.
+
 $$x_i = \frac{2m \cdot x_{i-1} + T_k \cdot x_{i-1} + F_x \cdot T^2 - m \cdot x_{i-2}}{m + T_k}$$
 $$y_i = \frac{2m \cdot y_{i-1} + T_k \cdot y_{i-1} + F_y \cdot T^2 - m \cdot y_{i-2}}{m + T_k}$$
 
