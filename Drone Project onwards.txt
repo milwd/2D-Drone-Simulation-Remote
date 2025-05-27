@@ -1,0 +1,16 @@
+learn drone movement dynamics
+how to calculate acceleration, speed, next position w.r.t. forces
+what does inertia mean? how does it work
+
+when does the simulation lag? find it out and point it out
+
+learn about discrete/continuous global/local path planning
+what is mpc
+how does mpc work
+rl methods? which one is more practical
+
+have a neural net learn a coefficient through simulation
+how can this help with sim-to-real transfer
+
+why does the program not show the ncurses window at first
+
